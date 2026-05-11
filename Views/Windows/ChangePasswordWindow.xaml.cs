@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using System.Windows;
+using WeddingAgency.Services;
 using WeddingAgency.ViewModels;
 
 namespace WeddingAgency.Views.Windows;
@@ -33,8 +34,17 @@ public partial class ChangePasswordWindow : Window
 
     private void OnPasswordChanged()
     {
-        var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
-        mainWindow.Show();
+        var authService = _serviceProvider.GetRequiredService<IAuthService>();
+        if (authService.CurrentUser?.IsAdmin == true)
+        {
+            var adminWindow = _serviceProvider.GetRequiredService<AdminWindow>();
+            adminWindow.Show();
+        }
+        else
+        {
+            var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
+            mainWindow.Show();
+        }
         Close();
     }
 }

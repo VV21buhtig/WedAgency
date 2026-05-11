@@ -2,7 +2,7 @@
 using System.Windows;
 using System.Windows.Data;
 
-namespace WeddingAgency.Helpers;
+namespace WeddingAgency.Core.Helpers;
 
 public class StringToVisibilityConverter : IValueConverter
 {

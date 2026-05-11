@@ -18,6 +18,7 @@ public partial class LoginViewModel : BaseViewModel
 
     public event Action? LoginSucceeded;
     public event Action? ChangePasswordRequired;
+    public event Action? AdminLoginSucceeded;
 
     public LoginViewModel(IAuthService authService)
     {
@@ -55,6 +56,10 @@ public partial class LoginViewModel : BaseViewModel
             if (user.MustChangePassword)
             {
                 ChangePasswordRequired?.Invoke();
+            }
+            else if (user.IsAdmin)
+            {
+                AdminLoginSucceeded?.Invoke();
             }
             else
             {

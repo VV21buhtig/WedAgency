@@ -1,17 +1,18 @@
-﻿using System.Globalization;
+﻿using System;
+using System.Globalization;
 using System.Windows.Data;
 
 namespace WeddingAgency.Core.Helpers;
 
-public class InvertBoolConverter : IValueConverter
+public class IsNotNullConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
-        return value is bool b && !b;
+        return value != null;
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
-        return value is bool b && !b;
+        throw new NotImplementedException();
     }
 }

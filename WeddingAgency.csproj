@@ -47,6 +47,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Update="Services\IUserManagementService.cs">
+      <Generator>MSBuild:Compile</Generator>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="appsettings.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

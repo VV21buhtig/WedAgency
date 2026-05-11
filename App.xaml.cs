@@ -17,6 +17,9 @@ public partial class App : Application
 
     public App()
     {
+        // Корректное завершение приложения
+        ShutdownMode = ShutdownMode.OnLastWindowClose;
+
         _host = Host.CreateDefaultBuilder()
             .ConfigureAppConfiguration((context, config) =>
             {
@@ -30,8 +33,10 @@ public partial class App : Application
                     options.UseSqlServer(
                         context.Configuration.GetConnectionString("DefaultConnection")));
 
-                // Auth — Scoped, т.к. использует DbContext (Scoped)
+                // Auth
                 services.AddScoped<IAuthService, AuthService>();
+                // User management
+                services.AddScoped<IUserManagementService, UserManagementService>();
 
                 // Navigation
                 services.AddSingleton<INavigationService, NavigationService>();
@@ -40,6 +45,7 @@ public partial class App : Application
                 services.AddTransient<LoginViewModel>();
                 services.AddTransient<ChangePasswordViewModel>();
                 services.AddTransient<MainWindowViewModel>();
+                services.AddTransient<AdminUsersViewModel>();
                 services.AddTransient<DashboardViewModel>();
                 services.AddTransient<PeopleViewModel>();
                 services.AddTransient<ProjectsViewModel>();
@@ -51,6 +57,7 @@ public partial class App : Application
                 services.AddTransient<LoginWindow>();
                 services.AddTransient<ChangePasswordWindow>();
                 services.AddTransient<MainWindow>();
+                services.AddTransient<AdminWindow>();
             })
             .Build();
     }
@@ -63,6 +70,7 @@ public partial class App : Application
         loginWindow.Show();
 
         base.OnStartup(e);
+        //MessageBox.Show(BCrypt.Net.BCrypt.HashPassword("1"));
     }
 
     protected override async void OnExit(ExitEventArgs e)

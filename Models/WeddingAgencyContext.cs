@@ -614,7 +614,7 @@ public partial class WeddingAgencyContext : DbContext
             entity.Property(e => e.Login)
                 .HasMaxLength(100)
                 .HasColumnName("login");
-
+            
             entity.Property(e => e.PasswordHash)
                 .HasMaxLength(255)
                 .HasColumnName("password_hash");

@@ -12,17 +12,21 @@ public partial class LoginWindow : Window
     public LoginWindow(LoginViewModel viewModel, IServiceProvider serviceProvider)
     {
         InitializeComponent();
+
         _viewModel = viewModel;
         _serviceProvider = serviceProvider;
+
         DataContext = _viewModel;
 
         _viewModel.LoginSucceeded += OnLoginSucceeded;
         _viewModel.ChangePasswordRequired += OnChangePasswordRequired;
+        _viewModel.AdminLoginSucceeded += OnAdminLoginSucceeded;
 
         Closed += (_, _) =>
         {
             _viewModel.LoginSucceeded -= OnLoginSucceeded;
             _viewModel.ChangePasswordRequired -= OnChangePasswordRequired;
+            _viewModel.AdminLoginSucceeded -= OnAdminLoginSucceeded;
         };
     }
 
@@ -40,8 +44,19 @@ public partial class LoginWindow : Window
 
     private void OnChangePasswordRequired()
     {
-        var changePasswordWindow = _serviceProvider.GetRequiredService<ChangePasswordWindow>();
+        var changePasswordWindow =
+            _serviceProvider.GetRequiredService<ChangePasswordWindow>();
+
         changePasswordWindow.Show();
+        Close();
+    }
+
+    private void OnAdminLoginSucceeded()
+    {
+        var adminWindow =
+            _serviceProvider.GetRequiredService<AdminWindow>();
+
+        adminWindow.Show();
         Close();
     }
 }
