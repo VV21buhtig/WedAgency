@@ -30,10 +30,15 @@ public partial class App : Application
                     options.UseSqlServer(
                         context.Configuration.GetConnectionString("DefaultConnection")));
 
+                // Auth — Scoped, т.к. использует DbContext (Scoped)
+                services.AddScoped<IAuthService, AuthService>();
+
                 // Navigation
                 services.AddSingleton<INavigationService, NavigationService>();
 
                 // ViewModels
+                services.AddTransient<LoginViewModel>();
+                services.AddTransient<ChangePasswordViewModel>();
                 services.AddTransient<MainWindowViewModel>();
                 services.AddTransient<DashboardViewModel>();
                 services.AddTransient<PeopleViewModel>();
@@ -43,6 +48,8 @@ public partial class App : Application
                 services.AddTransient<ContractorsViewModel>();
 
                 // Windows
+                services.AddTransient<LoginWindow>();
+                services.AddTransient<ChangePasswordWindow>();
                 services.AddTransient<MainWindow>();
             })
             .Build();
@@ -52,8 +59,8 @@ public partial class App : Application
     {
         await _host.StartAsync();
 
-        var mainWindow = _host.Services.GetRequiredService<MainWindow>();
-        mainWindow.Show();
+        var loginWindow = _host.Services.GetRequiredService<LoginWindow>();
+        loginWindow.Show();
 
         base.OnStartup(e);
     }

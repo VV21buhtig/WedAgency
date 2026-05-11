@@ -17,5 +17,12 @@ public partial class User
 
     public int? PersonId { get; set; }
 
+    // НОВОЕ
+    public bool IsAdmin { get; set; }
+
+    public bool MustChangePassword { get; set; }
+
+    public bool IsActive { get; set; }
+
     public virtual Person? Person { get; set; }
 }

@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="BCrypt.Net-Next" Version="4.2.0" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <PackageReference Include="FontAwesome.Sharp" Version="6.6.0" />
     <PackageReference Include="MaterialDesignColors" Version="5.2.1" />
@@ -35,7 +36,6 @@
     <Folder Include="Core\Enums\" />
     <Folder Include="Core\Interfaces\" />
     <Folder Include="Core\DTOs\" />
-    <Folder Include="Core\Helpers\" />
     <Folder Include="Core\Services\" />
     <Folder Include="Data\Context\" />
     <Folder Include="Data\Repositories\" />

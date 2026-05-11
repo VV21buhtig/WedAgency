@@ -603,19 +603,39 @@ public partial class WeddingAgencyContext : DbContext
             entity.HasIndex(e => e.Login, "UQ__users__7838F272D17C6DD3").IsUnique();
 
             entity.Property(e => e.Id).HasColumnName("id");
+
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(sysdatetime())")
                 .HasColumnName("created_at");
-            entity.Property(e => e.LastLogin).HasColumnName("last_login");
+
+            entity.Property(e => e.LastLogin)
+                .HasColumnName("last_login");
+
             entity.Property(e => e.Login)
                 .HasMaxLength(100)
                 .HasColumnName("login");
+
             entity.Property(e => e.PasswordHash)
                 .HasMaxLength(255)
                 .HasColumnName("password_hash");
-            entity.Property(e => e.PersonId).HasColumnName("person_id");
 
-            entity.HasOne(d => d.Person).WithOne(p => p.User)
+            entity.Property(e => e.PersonId)
+                .HasColumnName("person_id");
+
+            entity.Property(e => e.IsAdmin)
+                .HasDefaultValue(false)
+                .HasColumnName("is_admin");
+
+            entity.Property(e => e.MustChangePassword)
+                .HasDefaultValue(false)
+                .HasColumnName("must_change_password");
+
+            entity.Property(e => e.IsActive)
+                .HasDefaultValue(true)
+                .HasColumnName("is_active");
+
+            entity.HasOne(d => d.Person)
+                .WithOne(p => p.User)
                 .HasForeignKey<User>(d => d.PersonId)
                 .HasConstraintName("FK_users_person");
         });

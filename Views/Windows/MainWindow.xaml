@@ -45,8 +45,7 @@
                 </StackPanel>
 
                 <!-- Кнопки навигации -->
-                <StackPanel Grid.Row="1"
-                            Margin="12,8">
+                <StackPanel Grid.Row="1" Margin="12,8">
 
                     <Button Style="{StaticResource SidebarButton}"
                             Command="{Binding NavigateCommand}"
@@ -56,16 +55,10 @@
                                 <ColumnDefinition Width="32" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <fa:IconBlock Grid.Column="0"
-                                          Icon="ChartBar"
-                                          Width="16"
-                                          Height="16"
+                            <fa:IconBlock Grid.Column="0" Icon="ChartBar" Width="16" Height="16"
                                           VerticalAlignment="Center"
                                           Foreground="{DynamicResource PrimaryHueMidBrush}" />
-                            <TextBlock Grid.Column="1"
-                                       Text="Дашборд"
-                                       VerticalAlignment="Center"
-                                       Margin="12,0,0,0" />
+                            <TextBlock Grid.Column="1" Text="Дашборд" VerticalAlignment="Center" Margin="12,0,0,0" />
                         </Grid>
                     </Button>
 
@@ -77,16 +70,10 @@
                                 <ColumnDefinition Width="32" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <fa:IconBlock Grid.Column="0"
-                                          Icon="Users"
-                                          Width="16"
-                                          Height="16"
+                            <fa:IconBlock Grid.Column="0" Icon="Users" Width="16" Height="16"
                                           VerticalAlignment="Center"
                                           Foreground="{DynamicResource PrimaryHueMidBrush}" />
-                            <TextBlock Grid.Column="1"
-                                       Text="Люди"
-                                       VerticalAlignment="Center"
-                                       Margin="12,0,0,0" />
+                            <TextBlock Grid.Column="1" Text="Люди" VerticalAlignment="Center" Margin="12,0,0,0" />
                         </Grid>
                     </Button>
 
@@ -98,16 +85,10 @@
                                 <ColumnDefinition Width="32" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <fa:IconBlock Grid.Column="0"
-                                          Icon="FolderOpen"
-                                          Width="16"
-                                          Height="16"
+                            <fa:IconBlock Grid.Column="0" Icon="FolderOpen" Width="16" Height="16"
                                           VerticalAlignment="Center"
                                           Foreground="{DynamicResource PrimaryHueMidBrush}" />
-                            <TextBlock Grid.Column="1"
-                                       Text="Проекты"
-                                       VerticalAlignment="Center"
-                                       Margin="12,0,0,0" />
+                            <TextBlock Grid.Column="1" Text="Проекты" VerticalAlignment="Center" Margin="12,0,0,0" />
                         </Grid>
                     </Button>
 
@@ -119,16 +100,10 @@
                                 <ColumnDefinition Width="32" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <fa:IconBlock Grid.Column="0"
-                                          Icon="MapMarkerAlt"
-                                          Width="16"
-                                          Height="16"
+                            <fa:IconBlock Grid.Column="0" Icon="MapMarkerAlt" Width="16" Height="16"
                                           VerticalAlignment="Center"
                                           Foreground="{DynamicResource PrimaryHueMidBrush}" />
-                            <TextBlock Grid.Column="1"
-                                       Text="Площадки"
-                                       VerticalAlignment="Center"
-                                       Margin="12,0,0,0" />
+                            <TextBlock Grid.Column="1" Text="Площадки" VerticalAlignment="Center" Margin="12,0,0,0" />
                         </Grid>
                     </Button>
 
@@ -140,16 +115,10 @@
                                 <ColumnDefinition Width="32" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <fa:IconBlock Grid.Column="0"
-                                          Icon="ChartLine"
-                                          Width="16"
-                                          Height="16"
+                            <fa:IconBlock Grid.Column="0" Icon="ChartLine" Width="16" Height="16"
                                           VerticalAlignment="Center"
                                           Foreground="{DynamicResource PrimaryHueMidBrush}" />
-                            <TextBlock Grid.Column="1"
-                                       Text="Финансы"
-                                       VerticalAlignment="Center"
-                                       Margin="12,0,0,0" />
+                            <TextBlock Grid.Column="1" Text="Финансы" VerticalAlignment="Center" Margin="12,0,0,0" />
                         </Grid>
                     </Button>
 
@@ -161,22 +130,16 @@
                                 <ColumnDefinition Width="32" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <fa:IconBlock Grid.Column="0"
-                                          Icon="Handshake"
-                                          Width="16"
-                                          Height="16"
+                            <fa:IconBlock Grid.Column="0" Icon="Handshake" Width="16" Height="16"
                                           VerticalAlignment="Center"
                                           Foreground="{DynamicResource PrimaryHueMidBrush}" />
-                            <TextBlock Grid.Column="1"
-                                       Text="Подрядчики"
-                                       VerticalAlignment="Center"
-                                       Margin="12,0,0,0" />
+                            <TextBlock Grid.Column="1" Text="Подрядчики" VerticalAlignment="Center" Margin="12,0,0,0" />
                         </Grid>
                     </Button>
 
                 </StackPanel>
 
-                <!-- Кнопка выхода -->
+                <!-- Кнопка выхода (заглушка) -->
                 <Button Grid.Row="2"
                         Style="{StaticResource SidebarButton}"
                         Margin="12">
@@ -217,7 +180,7 @@
                                Style="{StaticResource MaterialDesignHeadline5TextBlock}" />
                 </Border>
 
-                <!-- CONTENT AREA — только CurrentViewModel, DataTemplate сам подставит View -->
+                <!-- CONTENT AREA -->
                 <ContentControl Grid.Row="1"
                                 Content="{Binding CurrentViewModel}" />
             </Grid>
