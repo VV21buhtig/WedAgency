@@ -1,0 +1,33 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
+
+    <ResourceDictionary.MergedDictionaries>
+        <materialDesign:BundledTheme BaseTheme="Light"
+                                     PrimaryColor="DeepPurple"
+                                     SecondaryColor="Amber" />
+        <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesign3.Defaults.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+    <!-- Стиль кнопки бокового меню -->
+    <Style x:Key="SidebarButton"
+           TargetType="Button"
+           BasedOn="{StaticResource MaterialDesignFlatButton}">
+
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Height" Value="44" />
+        <Setter Property="Padding" Value="12,0" />
+        <Setter Property="Margin" Value="4,2" />
+        <Setter Property="FontSize" Value="14" />
+    </Style>
+
+    <!-- Стиль верхней панели -->
+    <Style x:Key="HeaderBar" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource MaterialDesignPaper}" />
+        <Setter Property="Padding" Value="16,12" />
+        <Setter Property="Margin" Value="0" />
+    </Style>
+
+</ResourceDictionary>

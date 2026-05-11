@@ -1,0 +1,46 @@
+﻿<Application x:Class="WeddingAgency.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:WeddingAgency.ViewModels"
+             xmlns:viewsDashboard="clr-namespace:WeddingAgency.Views.Dashboard"
+             xmlns:viewsPeople="clr-namespace:WeddingAgency.Views.People"
+             xmlns:viewsProjects="clr-namespace:WeddingAgency.Views.Projects"
+             xmlns:viewsVenues="clr-namespace:WeddingAgency.Views.Venues"
+             xmlns:viewsFinance="clr-namespace:WeddingAgency.Views.Finance"
+             xmlns:viewsContractors="clr-namespace:WeddingAgency.Views.Contractors">
+
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Themes/MaterialTheme.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- DataTemplates: ViewModel → View -->
+            <DataTemplate DataType="{x:Type vm:DashboardViewModel}">
+                <viewsDashboard:DashboardView />
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type vm:PeopleViewModel}">
+                <viewsPeople:PeopleView />
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type vm:ProjectsViewModel}">
+                <viewsProjects:ProjectsView />
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type vm:VenuesViewModel}">
+                <viewsVenues:VenuesView />
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type vm:FinanceViewModel}">
+                <viewsFinance:FinanceView />
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type vm:ContractorsViewModel}">
+                <viewsContractors:ContractorsView />
+            </DataTemplate>
+
+        </ResourceDictionary>
+    </Application.Resources>
+
+</Application>
