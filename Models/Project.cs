@@ -35,6 +35,8 @@ public partial class Project
 
     public DateTime? ClosedAt { get; set; }
 
+    public bool IsDeleted { get; set; }
+
     public virtual ICollection<ActsCompletion> ActsCompletions { get; set; } = new List<ActsCompletion>();
 
     public virtual ICollection<ChecklistItem> ChecklistItems { get; set; } = new List<ChecklistItem>();

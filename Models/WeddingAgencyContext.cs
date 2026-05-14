@@ -342,6 +342,10 @@ public partial class WeddingAgencyContext : DbContext
 
             entity.ToTable("people");
 
+            entity.HasIndex(e => e.FullName, "IX_people_full_name");
+
+            entity.HasIndex(e => e.PhonePrimary, "IX_people_phone_primary");
+
             entity.HasIndex(e => e.PhonePrimary, "UQ__people__B19FCF5B5F71F050").IsUnique();
 
             entity.Property(e => e.Id).HasColumnName("id");
@@ -356,6 +360,7 @@ public partial class WeddingAgencyContext : DbContext
                 .HasMaxLength(255)
                 .HasColumnName("full_name");
             entity.Property(e => e.InternalNotes).HasColumnName("internal_notes");
+            entity.Property(e => e.IsDeleted).HasColumnName("is_deleted");
             entity.Property(e => e.PhonePrimary)
                 .HasMaxLength(50)
                 .HasColumnName("phone_primary");
@@ -377,6 +382,10 @@ public partial class WeddingAgencyContext : DbContext
 
             entity.ToTable("projects");
 
+            entity.HasIndex(e => e.Status, "IX_projects_status");
+
+            entity.HasIndex(e => e.WeddingDate, "IX_projects_wedding_date");
+
             entity.HasIndex(e => e.ProjectNumber, "UQ__projects__5C6A7B0CA132DB70").IsUnique();
 
             entity.Property(e => e.Id).HasColumnName("id");
@@ -392,6 +401,7 @@ public partial class WeddingAgencyContext : DbContext
                 .HasColumnName("format_type");
             entity.Property(e => e.GuestCountMax).HasColumnName("guest_count_max");
             entity.Property(e => e.GuestCountMin).HasColumnName("guest_count_min");
+            entity.Property(e => e.IsDeleted).HasColumnName("is_deleted");
             entity.Property(e => e.LocationCity)
                 .HasMaxLength(100)
                 .HasColumnName("location_city");
@@ -493,6 +503,12 @@ public partial class WeddingAgencyContext : DbContext
             entity.HasKey(e => e.Id).HasName("PK__project___3213E83FE85C1284");
 
             entity.ToTable("project_people");
+
+            entity.HasIndex(e => e.PersonId, "IX_project_people_person");
+
+            entity.HasIndex(e => e.ProjectId, "IX_project_people_project");
+
+            entity.HasIndex(e => new { e.ProjectId, e.PersonId, e.Role }, "UQ_project_people_unique_role").IsUnique();
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.AssignedAt)
@@ -598,44 +614,34 @@ public partial class WeddingAgencyContext : DbContext
 
             entity.ToTable("users");
 
+            entity.HasIndex(e => e.Login, "IX_users_login");
+
             entity.HasIndex(e => e.PersonId, "UQ__users__543848DE5DC1FC61").IsUnique();
 
             entity.HasIndex(e => e.Login, "UQ__users__7838F272D17C6DD3").IsUnique();
 
             entity.Property(e => e.Id).HasColumnName("id");
-
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(sysdatetime())")
                 .HasColumnName("created_at");
-
-            entity.Property(e => e.LastLogin)
-                .HasColumnName("last_login");
-
-            entity.Property(e => e.Login)
-                .HasMaxLength(100)
-                .HasColumnName("login");
-            
-            entity.Property(e => e.PasswordHash)
-                .HasMaxLength(255)
-                .HasColumnName("password_hash");
-
-            entity.Property(e => e.PersonId)
-                .HasColumnName("person_id");
-
-            entity.Property(e => e.IsAdmin)
-                .HasDefaultValue(false)
-                .HasColumnName("is_admin");
-
-            entity.Property(e => e.MustChangePassword)
-                .HasDefaultValue(false)
-                .HasColumnName("must_change_password");
-
             entity.Property(e => e.IsActive)
                 .HasDefaultValue(true)
                 .HasColumnName("is_active");
+            entity.Property(e => e.IsAdmin).HasColumnName("is_admin");
+            entity.Property(e => e.IsDeleted).HasColumnName("is_deleted");
+            entity.Property(e => e.LastLogin).HasColumnName("last_login");
+            entity.Property(e => e.Login)
+                .HasMaxLength(100)
+                .HasColumnName("login");
+            entity.Property(e => e.MustChangePassword)
+                .HasDefaultValue(true)
+                .HasColumnName("must_change_password");
+            entity.Property(e => e.PasswordHash)
+                .HasMaxLength(255)
+                .HasColumnName("password_hash");
+            entity.Property(e => e.PersonId).HasColumnName("person_id");
 
-            entity.HasOne(d => d.Person)
-                .WithOne(p => p.User)
+            entity.HasOne(d => d.Person).WithOne(p => p.User)
                 .HasForeignKey<User>(d => d.PersonId)
                 .HasConstraintName("FK_users_person");
         });

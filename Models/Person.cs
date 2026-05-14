@@ -27,6 +27,8 @@ public partial class Person
 
     public DateTime? UpdatedAt { get; set; }
 
+    public bool IsDeleted { get; set; }
+
     public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
 
     public virtual ICollection<ProjectPerson> ProjectPeople { get; set; } = new List<ProjectPerson>();
