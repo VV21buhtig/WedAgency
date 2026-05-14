@@ -53,7 +53,7 @@ public class UserManagementService : IUserManagementService
         var user = await _context.Users.FindAsync(userId);
         if (user is null) return;
 
-        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword("1");
+        user.PasswordHash = "1"; 
         user.MustChangePassword = true;
         await _context.SaveChangesAsync();
     }
