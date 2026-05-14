@@ -26,7 +26,7 @@ public class AuthService : IAuthService
         if (!user.IsActive)
             return null;
 
-        if (!BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
+        if (user.PasswordHash != password)
             return null;
 
         CurrentUser = user;
@@ -38,7 +38,7 @@ public class AuthService : IAuthService
 
     public async Task ChangePasswordAsync(User user, string newPassword)
     {
-        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+        user.PasswordHash = newPassword; 
         user.MustChangePassword = false;
         user.LastLogin = DateTime.Now;
 
