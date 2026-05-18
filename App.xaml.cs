@@ -42,17 +42,25 @@ public partial class App : Application
                 services.AddSingleton<INavigationService, NavigationService>();
 
                 // ViewModels
+                services.AddScoped<IProjectFinanceService, ProjectFinanceService>();
                 services.AddTransient<LoginViewModel>();
                 services.AddTransient<ChangePasswordViewModel>();
                 services.AddTransient<MainWindowViewModel>();
                 services.AddTransient<AdminUsersViewModel>();
                 services.AddTransient<DashboardViewModel>();
+                services.AddScoped<IPeopleService, PeopleService>();
                 services.AddTransient<PeopleViewModel>();
-                services.AddTransient<ProjectsViewModel>();
+                services.AddScoped<IProjectService, ProjectService>();
+                services.AddTransient<ProjectsViewModel>(); 
                 services.AddTransient<VenuesViewModel>();
                 services.AddTransient<FinanceViewModel>();
                 services.AddTransient<ContractorsViewModel>();
-
+                services.AddScoped<IProjectPeopleService, ProjectPeopleService>();
+                services.AddScoped<IProjectDetailsService, ProjectDetailsService>();
+                services.AddTransient<ProjectDetailsViewModel>();
+                services.AddScoped<IProjectOverviewService, ProjectOverviewService>();
+                services.AddScoped<IProjectClientsService, ProjectClientsService>();
+                services.AddScoped<IProjectContractorsService, ProjectContractorsService>();
                 // Windows
                 services.AddTransient<LoginWindow>();
                 services.AddTransient<ChangePasswordWindow>();

@@ -30,4 +30,14 @@ public class NavigationService : INavigationService
         var viewModel = _serviceProvider.GetRequiredService<T>();
         CurrentViewModel = viewModel;
     }
+
+    public void NavigateTo<T>(object? parameter) where T : BaseViewModel
+    {
+        var viewModel = _serviceProvider.GetRequiredService<T>();
+
+        if (viewModel is INavigationAware aware)
+            aware.OnNavigatedTo(parameter);
+
+        CurrentViewModel = viewModel;
+    }
 }

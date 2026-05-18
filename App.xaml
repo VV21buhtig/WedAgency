@@ -8,7 +8,7 @@
              xmlns:viewsVenues="clr-namespace:WeddingAgency.Views.Venues"
              xmlns:viewsFinance="clr-namespace:WeddingAgency.Views.Finance"
              xmlns:viewsContractors="clr-namespace:WeddingAgency.Views.Contractors">
-
+    
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -38,6 +38,10 @@
 
             <DataTemplate DataType="{x:Type vm:ContractorsViewModel}">
                 <viewsContractors:ContractorsView />
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type vm:ProjectDetailsViewModel}">
+                <viewsProjects:ProjectDetailsView />
             </DataTemplate>
 
         </ResourceDictionary>

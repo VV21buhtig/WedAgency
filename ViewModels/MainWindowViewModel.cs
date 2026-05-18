@@ -18,8 +18,6 @@ public partial class MainWindowViewModel : BaseViewModel
     {
         _navigationService = navigationService;
         _navigationService.CurrentViewModelChanged += OnCurrentViewModelChanged;
-
-        // Стартовая страница
         _navigationService.NavigateTo<DashboardViewModel>();
     }
 

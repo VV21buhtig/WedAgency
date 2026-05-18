@@ -41,14 +41,22 @@
 		<Folder Include="Data\Repositories\" />
 		<Folder Include="Data\Configurations\" />
 		<Folder Include="Seed\" />
-		<Folder Include="ViewModels\Auth\" />
 		<Folder Include="Views\Controls\" />
 		<Folder Include="Views\Dialogs\" />
 	</ItemGroup>
 
 	<ItemGroup>
+		<Compile Update="Services\INavigationAware.cs">
+		  <Generator>MSBuild:Compile</Generator>
+		</Compile>
+		<Compile Update="Services\IProjectOverviewService.cs">
+		  <Generator>MSBuild:Compile</Generator>
+		</Compile>
 		<Compile Update="Services\IUserManagementService.cs">
 			<Generator>MSBuild:Compile</Generator>
+		</Compile>
+		<Compile Update="ViewModels\ProjectDetails\ProjectHeaderModel.cs">
+		  <Generator>MSBuild:Compile</Generator>
 		</Compile>
 	</ItemGroup>
 

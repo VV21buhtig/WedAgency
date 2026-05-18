@@ -27,7 +27,7 @@ public class UserManagementService : IUserManagementService
         var person = new Person
         {
             FullName = fullName,
-            PhonePrimary = Guid.NewGuid().ToString(),
+            PhonePrimary = null,
             CreatedAt = DateTime.Now,
             UpdatedAt = DateTime.Now
         };
@@ -37,7 +37,7 @@ public class UserManagementService : IUserManagementService
         var user = new Models.User
         {
             Login = login,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword("1"),
+            PasswordHash = "1",
             IsAdmin = isAdmin,
             MustChangePassword = true,
             IsActive = true,

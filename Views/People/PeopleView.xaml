@@ -1,14 +1,56 @@
 ﻿<UserControl x:Class="WeddingAgency.Views.People.PeopleView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
-    <Grid Margin="24">
-        <TextBlock Text="Список людей"
-                   Style="{StaticResource MaterialDesignHeadline4TextBlock}"
-                   VerticalAlignment="Center"
-                   HorizontalAlignment="Center"
-                   Opacity="0.5" />
+    <UserControl.Resources>
+        <x:Array x:Key="RoleFilterOptions" Type="sys:String">
+            <sys:String>Все</sys:String>
+            <sys:String>Клиенты</sys:String>
+            <sys:String>Сотрудники</sys:String>
+            <sys:String>Подрядчики</sys:String>
+        </x:Array>
+    </UserControl.Resources>
+
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
+            <TextBox materialDesign:HintAssist.Hint="Поиск по имени или телефону"
+                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                     Width="250" Margin="0,0,12,0" />
+            <ComboBox ItemsSource="{StaticResource RoleFilterOptions}"
+                      SelectedItem="{Binding RoleFilter}"
+                      Width="140" />
+        </StackPanel>
+
+        <DataGrid Grid.Row="1"
+                  ItemsSource="{Binding People}"
+                  SelectedItem="{Binding SelectedPerson}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  SelectionMode="Single">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="ФИО" Binding="{Binding FullName}" Width="*" />
+                <DataGridTextColumn Header="Телефон" Binding="{Binding PhonePrimary}" Width="140" />
+                <DataGridTextColumn Header="Email" Binding="{Binding Email}" Width="160" />
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,8,0,0">
+            <Button Content="Архивировать"
+                    Command="{Binding ArchivePersonCommand}"
+                    IsEnabled="{Binding SelectedPerson, Converter={StaticResource IsNotNullConverter}}"
+                    Style="{StaticResource MaterialDesignFlatButton}" />
+            <TextBlock Text="{Binding RolesDisplay, StringFormat='Роли: {0}'}"
+                       Margin="16,0,0,0"
+                       VerticalAlignment="Center"
+                       Opacity="0.7" />
+        </StackPanel>
     </Grid>
-
 </UserControl>

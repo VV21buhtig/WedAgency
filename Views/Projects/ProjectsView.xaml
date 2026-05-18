@@ -3,12 +3,58 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
 
-    <Grid Margin="24">
-        <TextBlock Text="Проекты"
-                   Style="{StaticResource MaterialDesignHeadline4TextBlock}"
-                   VerticalAlignment="Center"
-                   HorizontalAlignment="Center"
-                   Opacity="0.5" />
-    </Grid>
+    <UserControl.Resources>
+        <Style x:Key="StatusCell" TargetType="DataGridCell">
+            <Setter Property="Foreground" Value="{Binding Status, Converter={StaticResource StatusToColorConverter}}" />
+            <Setter Property="FontWeight" Value="Bold" />
+        </Style>
+    </UserControl.Resources>
 
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
+            <TextBox materialDesign:HintAssist.Hint="Поиск по номеру или городу"
+                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                     Width="250" Margin="0,0,12,0" />
+            <Button Content="Добавить"
+                    Command="{Binding AddProjectCommand}"
+                    Style="{StaticResource MaterialDesignRaisedButton}" />
+        </StackPanel>
+
+        <DataGrid Grid.Row="1"
+                  ItemsSource="{Binding Projects}"
+                  SelectedItem="{Binding SelectedProject}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  SelectionMode="Single"
+                  MouseDoubleClick="DataGrid_MouseDoubleClick">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Номер" Binding="{Binding ProjectNumber}" Width="120" />
+                <DataGridTextColumn Header="Дата" Binding="{Binding WeddingDate, StringFormat='{}{0:dd.MM.yyyy}'}" Width="100" />
+                <DataGridTextColumn Header="Город" Binding="{Binding LocationCity}" Width="120" />
+                <DataGridTextColumn Header="Бюджет" Binding="{Binding BudgetTotal, StringFormat='{}{0:N0} ₽'}" Width="120" />
+                <DataGridTextColumn Header="Гостей" Binding="{Binding GuestCountMin}" Width="80" />
+                <DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="100" CellStyle="{StaticResource StatusCell}" />
+                <DataGridTextColumn Header="Менеджер" Binding="{Binding ManagerName}" Width="150" />
+                <DataGridTextColumn Header="Клиенты" Binding="{Binding ClientsDisplay}" Width="*" />
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,8,0,0">
+            <Button Content="Открыть"
+                    Command="{Binding OpenProjectCommand}"
+                    IsEnabled="{Binding SelectedProject, Converter={StaticResource IsNotNullConverter}}"
+                    Style="{StaticResource MaterialDesignRaisedButton}"
+                    Margin="0,0,8,0" />
+            <Button Content="Закрыть проект"
+                    Command="{Binding CloseProjectCommand}"
+                    IsEnabled="{Binding CanCloseProject}"
+                    Style="{StaticResource MaterialDesignFlatButton}" />
+        </StackPanel>
+    </Grid>
 </UserControl>

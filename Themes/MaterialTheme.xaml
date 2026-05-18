@@ -14,6 +14,8 @@
     <helpers:StringToVisibilityConverter x:Key="StringToVisibilityConverter" />
     <helpers:InvertBoolConverter x:Key="InvertBoolConverter" />
     <helpers:IsNotNullConverter x:Key="IsNotNullConverter" />
+    <helpers:StatusToColorConverter x:Key="StatusToColorConverter" />
+    <helpers:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
 
     <!-- Стиль кнопки бокового меню -->
     <Style x:Key="SidebarButton"
