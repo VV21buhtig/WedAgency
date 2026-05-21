@@ -28,7 +28,8 @@
                 </WrapPanel>
                 <WrapPanel Margin="0,4,0,0">
                     <TextBlock Text="{Binding Header.ClientCount, StringFormat='Клиентов: {0}'}" Margin="0,0,16,0" FontWeight="Bold" />
-                    <TextBlock Text="{Binding Header.ContractorCount, StringFormat='Подрядчиков: {0}'}" FontWeight="Bold" />
+                    <TextBlock Text="{Binding Header.ContractorCount, StringFormat='Подрядчиков: {0}'}" Margin="0,0,16,0" FontWeight="Bold" />
+                    <TextBlock Text="{Binding Header.GuestCount, StringFormat='Гостей: {0}'}" FontWeight="Bold" />
                 </WrapPanel>
             </StackPanel>
         </Border>
@@ -67,15 +68,16 @@
                         </ListBox.ItemTemplate>
                     </ListBox>
 
-                    <DataGrid Grid.Row="1" ItemsSource="{Binding Clients}" AutoGenerateColumns="False" IsReadOnly="True">
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding Clients}" AutoGenerateColumns="False" IsReadOnly="True"
+                              ColumnWidth="*">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="ФИО" Binding="{Binding FullName}" Width="*" />
                             <DataGridTextColumn Header="Телефон" Binding="{Binding Phone}" Width="140" />
-                            <DataGridTextColumn Header="Email" Binding="{Binding Email}" Width="160" />
-                            <DataGridTemplateColumn Width="80">
+                            <DataGridTextColumn Header="Email" Binding="{Binding Email}" Width="180" />
+                            <DataGridTemplateColumn Header="" Width="60">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Button Content="Удалить"
+                                        <Button Content="✕" Width="40" Height="24"
                                                 Command="{Binding DataContext.RemoveClientCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                 CommandParameter="{Binding}" />
                                     </DataTemplate>
@@ -97,14 +99,14 @@
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                         <TextBox materialDesign:HintAssist.Hint="Поиск человека"
                                  Text="{Binding ContractorSearchText, UpdateSourceTrigger=PropertyChanged}"
-                                 Width="200" Margin="0,0,8,0"
+                                 Width="180" Margin="0,0,6,0"
                                  KeyDown="OnContractorSearchKeyDown" />
                         <TextBox materialDesign:HintAssist.Hint="Услуга"
                                  Text="{Binding ContractorService, UpdateSourceTrigger=PropertyChanged}"
-                                 Width="120" Margin="0,0,8,0" />
+                                 Width="100" Margin="0,0,6,0" />
                         <TextBox materialDesign:HintAssist.Hint="Стоимость"
                                  Text="{Binding ContractorCost, UpdateSourceTrigger=PropertyChanged}"
-                                 Width="100" Margin="0,0,8,0" />
+                                 Width="90" Margin="0,0,6,0" />
                         <Button Content="Найти" Command="{Binding SearchContractorsCommand}"
                                 Style="{StaticResource MaterialDesignFlatButton}" />
                     </StackPanel>
@@ -124,20 +126,95 @@
                         </ListBox.ItemTemplate>
                     </ListBox>
 
-                    <DataGrid Grid.Row="1" ItemsSource="{Binding Contractors}" AutoGenerateColumns="False" IsReadOnly="True">
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding Contractors}" AutoGenerateColumns="False" IsReadOnly="True"
+                              ColumnWidth="*">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="ФИО" Binding="{Binding FullName}" Width="*" />
                             <DataGridTextColumn Header="Услуга" Binding="{Binding Service}" Width="160" />
                             <DataGridTextColumn Header="Стоимость" Binding="{Binding Cost, StringFormat='{}{0:N0} ₽'}" Width="120" />
-                            <DataGridTemplateColumn Width="80">
+                            <DataGridTemplateColumn Header="" Width="60">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Button Content="Удалить"
+                                        <Button Content="✕" Width="40" Height="24"
                                                 Command="{Binding DataContext.RemoveContractorCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                 CommandParameter="{Binding}" />
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+
+            <!-- ГОСТИ -->
+            <TabItem Header="Гости" PreviewMouseLeftButtonDown="OnGuestsTabSelected">
+                <Grid Margin="12">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBox materialDesign:HintAssist.Hint="Поиск человека"
+                                 Text="{Binding GuestSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                 Width="250" Margin="0,0,8,0"
+                                 KeyDown="OnGuestSearchKeyDown" />
+                        <Button Content="Найти" Command="{Binding SearchGuestsCommand}"
+                                Style="{StaticResource MaterialDesignFlatButton}" />
+                    </StackPanel>
+
+                    <ListBox Grid.Row="0" ItemsSource="{Binding GuestSearchResults}"
+                             Visibility="{Binding GuestSearchResults.Count, Converter={StaticResource BoolToVisibilityConverter}}"
+                             MaxHeight="120" Margin="0,0,0,8">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <TextBlock Text="{Binding FullName}" />
+                                    <Button Content="Добавить" HorizontalAlignment="Right"
+                                            Command="{Binding DataContext.AddGuestCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                            CommandParameter="{Binding}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding Guests}" AutoGenerateColumns="False" IsReadOnly="True"
+                              ColumnWidth="*">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="ФИО" Binding="{Binding FullName}" Width="*" />
+                            <DataGridTextColumn Header="Телефон" Binding="{Binding Phone}" Width="120" />
+                            <DataGridTextColumn Header="Приглашение" Binding="{Binding InvitationStatus}" Width="110" />
+                            <DataGridTextColumn Header="Диета" Binding="{Binding DietaryRestrictions}" Width="120" />
+                            <DataGridCheckBoxColumn Header="Трансфер" Binding="{Binding TransferNeeded}" Width="70" />
+                            <DataGridCheckBoxColumn Header="Проживание" Binding="{Binding AccommodationNeeded}" Width="80" />
+                            <DataGridTextColumn Header="Стол" Binding="{Binding TableNumber}" Width="50" />
+                            <DataGridTemplateColumn Header="" Width="60">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Content="✕" Width="40" Height="24"
+                                                Command="{Binding DataContext.RemoveGuestCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+
+            <!-- ПЛОЩАДКА -->
+            <TabItem Header="Площадка" PreviewMouseLeftButtonDown="OnVenuesTabSelected">
+                <Grid Margin="12">
+                    <DataGrid ItemsSource="{Binding Venues}" AutoGenerateColumns="False" IsReadOnly="True"
+                              ColumnWidth="*">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Название" Binding="{Binding VenueName}" Width="*" />
+                            <DataGridTextColumn Header="Адрес" Binding="{Binding Address}" Width="*" />
+                            <DataGridTextColumn Header="Город" Binding="{Binding City}" Width="100" />
+                            <DataGridTextColumn Header="Аренда" Binding="{Binding RentalCost, StringFormat='{}{0:N0} ₽'}" Width="110" />
+                            <DataGridTextColumn Header="Депозит" Binding="{Binding DepositAmount, StringFormat='{}{0:N0} ₽'}" Width="110" />
+                            <DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="100" />
+                            <DataGridTextColumn Header="Дата" Binding="{Binding EventDate, StringFormat='{}{0:dd.MM.yyyy}'}" Width="100" />
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
@@ -151,7 +228,6 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
-                    <!-- Сводка -->
                     <Border Background="{DynamicResource MaterialDesignPaper}" Padding="12" CornerRadius="4" Margin="0,0,0,12">
                         <WrapPanel>
                             <TextBlock Text="{Binding FinanceSummary.BudgetTotal, StringFormat='Бюджет: {0:N0} ₽'}" Margin="0,0,20,0" FontWeight="Bold" />
@@ -162,15 +238,32 @@
                         </WrapPanel>
                     </Border>
 
-                    <!-- Таблица операций -->
-                    <DataGrid Grid.Row="1" ItemsSource="{Binding FinanceTransactions}" AutoGenerateColumns="False" IsReadOnly="True">
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding FinanceTransactions}" AutoGenerateColumns="False" IsReadOnly="True"
+                              ColumnWidth="*">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Тип" Binding="{Binding Type}" Width="120" />
+                            <DataGridTextColumn Header="Тип" Binding="{Binding Type}" Width="140" />
                             <DataGridTextColumn Header="Номер" Binding="{Binding Number}" Width="120" />
                             <DataGridTextColumn Header="Контрагент" Binding="{Binding Counterparty}" Width="*" />
                             <DataGridTextColumn Header="Сумма" Binding="{Binding Amount, StringFormat='{}{0:N0} ₽'}" Width="120" />
                             <DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="100" />
                             <DataGridTextColumn Header="Дата" Binding="{Binding Date, StringFormat='{}{0:dd.MM.yyyy}'}" Width="100" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+
+            <!-- ТАЙМЛАЙН -->
+            <TabItem Header="Таймлайн" PreviewMouseLeftButtonDown="OnTimelineTabSelected">
+                <Grid Margin="12">
+                    <DataGrid ItemsSource="{Binding TimelineEvents}" AutoGenerateColumns="False" IsReadOnly="True"
+                  ColumnWidth="*">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Начало" Binding="{Binding StartTime, StringFormat='{}{0:HH:mm}'}" Width="70" />
+                            <DataGridTextColumn Header="Конец" Binding="{Binding EndTime, StringFormat='{}{0:HH:mm}'}" Width="70" />
+                            <DataGridTextColumn Header="Описание" Binding="{Binding Description}" Width="*" />
+                            <DataGridTextColumn Header="Локация" Binding="{Binding Location}" Width="140" />
+                            <DataGridTextColumn Header="Ответственный" Binding="{Binding ResponsiblePerson}" Width="140" />
+                            <DataGridTextColumn Header="Заметки" Binding="{Binding Notes}" Width="160" />
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>

@@ -139,25 +139,26 @@
 
                 </StackPanel>
 
-                <!-- Кнопка выхода (заглушка) -->
+                <!-- Кнопка выхода -->
                 <Button Grid.Row="2"
-                        Style="{StaticResource SidebarButton}"
-                        Margin="12">
+        Style="{StaticResource SidebarButton}"
+        Margin="12"
+        Command="{Binding LogoutCommand}">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="32" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                         <fa:IconBlock Grid.Column="0"
-                                      Icon="SignOutAlt"
-                                      Width="16"
-                                      Height="16"
-                                      VerticalAlignment="Center"
-                                      Foreground="{DynamicResource PrimaryHueMidBrush}" />
+                      Icon="SignOutAlt"
+                      Width="16"
+                      Height="16"
+                      VerticalAlignment="Center"
+                      Foreground="{DynamicResource PrimaryHueMidBrush}" />
                         <TextBlock Grid.Column="1"
-                                   Text="Выйти"
-                                   VerticalAlignment="Center"
-                                   Margin="12,0,0,0" />
+                   Text="Выйти"
+                   VerticalAlignment="Center"
+                   Margin="12,0,0,0" />
                     </Grid>
                 </Button>
             </Grid>

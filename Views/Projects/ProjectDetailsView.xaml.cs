@@ -40,4 +40,26 @@ public partial class ProjectDetailsView : UserControl
         if (e.Key == Key.Enter && DataContext is ProjectDetailsViewModel vm)
             vm.SearchContractorsCommand.Execute(null);
     }
+    private void OnGuestsTabSelected(object sender, MouseButtonEventArgs e)
+    {
+        if (DataContext is ProjectDetailsViewModel vm)
+            vm.LoadGuestsCommand.Execute(null);
+    }
+
+    private void OnGuestSearchKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter && DataContext is ProjectDetailsViewModel vm)
+            vm.SearchGuestsCommand.Execute(null);
+    }
+    private void OnVenuesTabSelected(object sender, MouseButtonEventArgs e)
+    {
+        if (DataContext is ProjectDetailsViewModel vm)
+            vm.LoadVenuesCommand.Execute(null);
+    }
+
+    private void OnTimelineTabSelected(object sender, MouseButtonEventArgs e)
+    {
+        if (DataContext is ProjectDetailsViewModel vm)
+            vm.LoadTimelineCommand.Execute(null);
+    }
 }

@@ -34,7 +34,8 @@ public class ProjectOverviewService : IProjectOverviewService
             LocationCity = p.LocationCity,
             ManagerName = p.ResponsibleManager?.FullName ?? "Не назначен",
             ClientCount = p.ProjectPeople.Count(pp => pp.Role == ProjectRoles.Client),
-            ContractorCount = p.ProjectPeople.Count(pp => pp.Role == ProjectRoles.Contractor)
+            ContractorCount = p.ProjectPeople.Count(pp => pp.Role == ProjectRoles.Contractor),
+            GuestCount = p.ProjectPeople.Count(pp => pp.Role == ProjectRoles.Guest)
         };
     }
 }

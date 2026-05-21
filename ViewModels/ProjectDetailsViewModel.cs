@@ -14,6 +14,9 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
     private readonly IProjectOverviewService _overviewService;
     private readonly IProjectPeopleService _peopleService;
     private readonly IProjectFinanceService _financeService;
+    private readonly IProjectGuestsService _guestsService;
+    private readonly IProjectVenueService _venueService;
+    private readonly IProjectTimelineService _timelineService;
     private readonly INavigationService _navigation;
 
     private int _projectId;
@@ -47,6 +50,24 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
     [ObservableProperty]
     private decimal? _contractorCost;
 
+    // Гости
+    [ObservableProperty]
+    private ObservableCollection<GuestListItem> _guests = new();
+
+    [ObservableProperty]
+    private string _guestSearchText = string.Empty;
+
+    [ObservableProperty]
+    private ObservableCollection<PersonSearchResult> _guestSearchResults = new();
+
+    // Площадка
+    [ObservableProperty]
+    private ObservableCollection<VenueItemModel> _venues = new();
+
+    // Таймлайн
+    [ObservableProperty]
+    private ObservableCollection<TimelineEventItem> _timelineEvents = new();
+
     // Финансы
     [ObservableProperty]
     private FinanceSummaryModel? _financeSummary;
@@ -63,11 +84,17 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
         IProjectOverviewService overviewService,
         IProjectPeopleService peopleService,
         IProjectFinanceService financeService,
+        IProjectGuestsService guestsService,
+        IProjectVenueService venueService,
+        IProjectTimelineService timelineService,
         INavigationService navigation)
     {
         _overviewService = overviewService;
         _peopleService = peopleService;
         _financeService = financeService;
+        _guestsService = guestsService;
+        _venueService = venueService;
+        _timelineService = timelineService;
         _navigation = navigation;
     }
 
@@ -180,6 +207,71 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
         await _peopleService.RemoveContractorAsync(_projectId, contractor.PersonId);
         await LoadContractorsAsync();
         await LoadHeaderAsync();
+    }
+
+    // ========== ГОСТИ ==========
+
+    [RelayCommand]
+    private async Task LoadGuestsAsync()
+    {
+        var list = await _guestsService.GetGuestsAsync(_projectId);
+        Guests = new ObservableCollection<GuestListItem>(list);
+    }
+
+    [RelayCommand]
+    private async Task SearchGuestsAsync()
+    {
+        if (string.IsNullOrWhiteSpace(GuestSearchText))
+        {
+            GuestSearchResults.Clear();
+            return;
+        }
+        var results = await new WeddingAgencyContext()
+            .People
+            .Where(p => p.FullName.Contains(GuestSearchText) || p.PhonePrimary.Contains(GuestSearchText))
+            .Take(10)
+            .Select(p => new PersonSearchResult { Id = p.Id, FullName = p.FullName, Phone = p.PhonePrimary })
+            .ToListAsync();
+
+        GuestSearchResults = new ObservableCollection<PersonSearchResult>(results);
+    }
+
+    [RelayCommand]
+    private async Task AddGuestAsync(PersonSearchResult? person)
+    {
+        if (person == null) return;
+        await _guestsService.AddGuestAsync(_projectId, person.Id);
+        GuestSearchText = string.Empty;
+        GuestSearchResults.Clear();
+        await LoadGuestsAsync();
+        await LoadHeaderAsync();
+    }
+
+    [RelayCommand]
+    private async Task RemoveGuestAsync(GuestListItem? guest)
+    {
+        if (guest == null) return;
+        await _guestsService.RemoveGuestAsync(_projectId, guest.PersonId);
+        await LoadGuestsAsync();
+        await LoadHeaderAsync();
+    }
+
+    // ========== ПЛОЩАДКА ==========
+
+    [RelayCommand]
+    private async Task LoadVenuesAsync()
+    {
+        var list = await _venueService.GetVenuesAsync(_projectId);
+        Venues = new ObservableCollection<VenueItemModel>(list);
+    }
+
+    // ========== ТАЙМЛАЙН ==========
+
+    [RelayCommand]
+    private async Task LoadTimelineAsync()
+    {
+        var list = await _timelineService.GetEventsAsync(_projectId);
+        TimelineEvents = new ObservableCollection<TimelineEventItem>(list);
     }
 
     // ========== ФИНАНСЫ ==========

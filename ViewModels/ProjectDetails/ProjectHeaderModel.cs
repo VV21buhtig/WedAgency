@@ -12,4 +12,5 @@ public class ProjectHeaderModel
     public string? ManagerName { get; init; }
     public int ClientCount { get; init; }
     public int ContractorCount { get; init; }
+    public int GuestCount { get; init; }
 }

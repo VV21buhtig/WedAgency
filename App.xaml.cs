@@ -61,6 +61,9 @@ public partial class App : Application
                 services.AddScoped<IProjectOverviewService, ProjectOverviewService>();
                 services.AddScoped<IProjectClientsService, ProjectClientsService>();
                 services.AddScoped<IProjectContractorsService, ProjectContractorsService>();
+                services.AddScoped<IProjectGuestsService, ProjectGuestsService>();
+                services.AddScoped<IProjectVenueService, ProjectVenueService>();
+                services.AddScoped<IProjectTimelineService, ProjectTimelineService>();
                 // Windows
                 services.AddTransient<LoginWindow>();
                 services.AddTransient<ChangePasswordWindow>();
