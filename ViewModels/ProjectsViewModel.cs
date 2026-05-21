@@ -1,6 +1,9 @@
-﻿using System.Collections.ObjectModel;
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using System.Collections.ObjectModel;
+using WeddingAgency.Models;
 using WeddingAgency.Services;
 using WeddingAgency.ViewModels.Base;
 
@@ -10,6 +13,7 @@ public partial class ProjectsViewModel : BaseViewModel
 {
     private readonly IProjectService _projectService;
     private readonly INavigationService _navigation;
+    private readonly IServiceProvider _serviceProvider;
 
     [ObservableProperty]
     private ObservableCollection<ProjectListItem> _projects = new();
@@ -25,10 +29,11 @@ public partial class ProjectsViewModel : BaseViewModel
 
     public override string Title => "Проекты";
 
-    public ProjectsViewModel(IProjectService projectService, INavigationService navigation)
+    public ProjectsViewModel(IProjectService projectService, INavigationService navigation, IServiceProvider serviceProvider)
     {
         _projectService = projectService;
         _navigation = navigation;
+        _serviceProvider = serviceProvider;
     }
 
     public async Task InitializeAsync() => await LoadProjects();
@@ -39,7 +44,14 @@ public partial class ProjectsViewModel : BaseViewModel
         IsBusy = true;
         try
         {
-            var list = await _projectService.GetAllProjectsAsync();
+            // Используем свежий контекст для каждого запроса
+            using var scope = _serviceProvider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<WeddingAgencyContext>();
+
+            var list = await context.Projects
+                .Include(p => p.ResponsibleManager)
+                .OrderByDescending(p => p.CreatedAt)
+                .ToListAsync();
 
             if (!string.IsNullOrWhiteSpace(SearchText))
             {
@@ -53,7 +65,11 @@ public partial class ProjectsViewModel : BaseViewModel
             var items = new List<ProjectListItem>();
             foreach (var p in list)
             {
-                var clientNames = await _projectService.GetClientNamesAsync(p.Id);
+                var clientNames = await context.ProjectPeople
+                    .Where(pp => pp.ProjectId == p.Id && pp.Role == "Client")
+                    .Select(pp => pp.Person.FullName)
+                    .ToListAsync();
+
                 items.Add(new ProjectListItem
                 {
                     Id = p.Id,
@@ -64,7 +80,7 @@ public partial class ProjectsViewModel : BaseViewModel
                     GuestCountMin = p.GuestCountMin,
                     Status = p.Status ?? "",
                     ManagerName = p.ResponsibleManager?.FullName,
-                    ClientsDisplay = clientNames
+                    ClientsDisplay = clientNames.Any() ? string.Join(", ", clientNames) : "Нет клиентов"
                 });
             }
 

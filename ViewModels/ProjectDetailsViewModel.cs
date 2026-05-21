@@ -2,6 +2,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using WeddingAgency.Models;
 using WeddingAgency.Services;
 using WeddingAgency.ViewModels.Base;
@@ -18,6 +19,7 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
     private readonly IProjectVenueService _venueService;
     private readonly IProjectTimelineService _timelineService;
     private readonly INavigationService _navigation;
+    private readonly IServiceProvider _serviceProvider;
 
     private int _projectId;
 
@@ -78,6 +80,28 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
     [ObservableProperty]
     private bool _isFinanceLoaded;
 
+    // Edit mode
+    [ObservableProperty]
+    private bool _isEditMode;
+
+    [ObservableProperty]
+    private string? _editProjectNumber;
+
+    [ObservableProperty]
+    private DateOnly? _editWeddingDate;
+
+    [ObservableProperty]
+    private string? _editLocationCity;
+
+    [ObservableProperty]
+    private decimal? _editBudgetTotal;
+
+    [ObservableProperty]
+    private int? _editGuestCount;
+
+    [ObservableProperty]
+    private string? _editStatus;
+
     public override string Title => $"Проект: {Header?.ProjectNumber ?? ""}";
 
     public ProjectDetailsViewModel(
@@ -87,7 +111,8 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
         IProjectGuestsService guestsService,
         IProjectVenueService venueService,
         IProjectTimelineService timelineService,
-        INavigationService navigation)
+        INavigationService navigation,
+        IServiceProvider serviceProvider)
     {
         _overviewService = overviewService;
         _peopleService = peopleService;
@@ -96,6 +121,7 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
         _venueService = venueService;
         _timelineService = timelineService;
         _navigation = navigation;
+        _serviceProvider = serviceProvider;
     }
 
     public void OnNavigatedTo(object? parameter)
@@ -112,6 +138,70 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
         Header = await _overviewService.GetHeaderAsync(_projectId);
         OnPropertyChanged(nameof(Title));
     }
+
+    // ========== EDIT MODE ==========
+
+    [RelayCommand]
+    private void EnableEditMode()
+    {
+        if (Header == null) return;
+
+        EditProjectNumber = Header.ProjectNumber;
+        EditWeddingDate = Header.WeddingDate;
+        EditLocationCity = Header.LocationCity;
+        EditBudgetTotal = Header.BudgetTotal;
+        EditGuestCount = Header.GuestCountMin;
+        EditStatus = Header.Status;
+
+        IsEditMode = true;
+    }
+
+    [RelayCommand]
+    private void CancelEdit()
+    {
+        IsEditMode = false;
+    }
+
+    [RelayCommand]
+    private async Task SaveEditAsync()
+    {
+        if (Header == null) return;
+
+        using var scope = _serviceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<WeddingAgencyContext>();
+
+        var project = await context.Projects.FindAsync(_projectId);
+        if (project == null) return;
+
+        project.ProjectNumber = EditProjectNumber ?? Header.ProjectNumber;
+        project.WeddingDate = EditWeddingDate;
+        project.LocationCity = EditLocationCity;
+        project.BudgetTotal = EditBudgetTotal;
+        project.GuestCountMin = EditGuestCount;
+        project.Status = EditStatus ?? Header.Status;
+
+        await context.SaveChangesAsync();
+
+        // Обновляем Header напрямую, без запроса к БД
+        Header = new ProjectHeaderModel
+        {
+            Id = Header.Id,
+            ProjectNumber = project.ProjectNumber,
+            WeddingDate = project.WeddingDate,
+            Status = project.Status ?? "",
+            BudgetTotal = project.BudgetTotal,
+            GuestCountMin = project.GuestCountMin,
+            LocationCity = project.LocationCity,
+            ManagerName = Header.ManagerName,
+            ClientCount = Header.ClientCount,
+            ContractorCount = Header.ContractorCount,
+            GuestCount = Header.GuestCount
+        };
+        OnPropertyChanged(nameof(Title));
+
+        IsEditMode = false;
+    }
+    private WeddingAgencyContext GetContext() => _serviceProvider.GetRequiredService<WeddingAgencyContext>();
 
     // ========== КЛИЕНТЫ ==========
 
@@ -130,8 +220,8 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
             ClientSearchResults.Clear();
             return;
         }
-        var results = await new WeddingAgencyContext()
-            .People
+        var context = GetContext();
+        var results = await context.People
             .Where(p => p.FullName.Contains(ClientSearchText) || p.PhonePrimary.Contains(ClientSearchText))
             .Take(10)
             .Select(p => new PersonSearchResult { Id = p.Id, FullName = p.FullName, Phone = p.PhonePrimary })
@@ -177,8 +267,8 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
             ContractorSearchResults.Clear();
             return;
         }
-        var results = await new WeddingAgencyContext()
-            .People
+        var context = GetContext();
+        var results = await context.People
             .Where(p => p.FullName.Contains(ContractorSearchText) || p.PhonePrimary.Contains(ContractorSearchText))
             .Take(10)
             .Select(p => new PersonSearchResult { Id = p.Id, FullName = p.FullName, Phone = p.PhonePrimary })
@@ -226,8 +316,8 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
             GuestSearchResults.Clear();
             return;
         }
-        var results = await new WeddingAgencyContext()
-            .People
+        var context = GetContext();
+        var results = await context.People
             .Where(p => p.FullName.Contains(GuestSearchText) || p.PhonePrimary.Contains(GuestSearchText))
             .Take(10)
             .Select(p => new PersonSearchResult { Id = p.Id, FullName = p.FullName, Phone = p.PhonePrimary })

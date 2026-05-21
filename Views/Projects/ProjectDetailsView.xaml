@@ -16,22 +16,79 @@
 
         <!-- Header -->
         <Border Grid.Row="1" Background="{DynamicResource MaterialDesignPaper}" Padding="16" CornerRadius="4" Margin="0,0,0,12">
-            <StackPanel>
-                <TextBlock Text="{Binding Header.ProjectNumber}" Style="{StaticResource MaterialDesignHeadline5TextBlock}" />
-                <WrapPanel Margin="0,8,0,0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- Заголовок и кнопки -->
+                <StackPanel Orientation="Horizontal">
+                    <!-- View mode -->
+                    <TextBlock Text="{Binding Header.ProjectNumber}" 
+                               Style="{StaticResource MaterialDesignHeadline5TextBlock}"
+                               Visibility="{Binding IsEditMode, Converter={StaticResource InvertBoolConverter}}" />
+                    <!-- Edit mode -->
+                    <TextBox Text="{Binding EditProjectNumber}" 
+                             FontSize="24" FontWeight="SemiBold"
+                             Visibility="{Binding IsEditMode, Converter={StaticResource BoolToVisibilityConverter}}"
+                             Width="200" Margin="0,0,8,0" />
+
+                    <Button Content="Редактировать" 
+                            Command="{Binding EnableEditModeCommand}"
+                            Visibility="{Binding IsEditMode, Converter={StaticResource InvertBoolConverter}}"
+                            Style="{StaticResource MaterialDesignFlatButton}"
+                            VerticalAlignment="Center" Margin="16,0,0,0" />
+                    <Button Content="Сохранить" 
+                            Command="{Binding SaveEditCommand}"
+                            Visibility="{Binding IsEditMode, Converter={StaticResource BoolToVisibilityConverter}}"
+                            Style="{StaticResource MaterialDesignRaisedButton}"
+                            VerticalAlignment="Center" Margin="0,0,4,0" />
+                    <Button Content="Отмена" 
+                            Command="{Binding CancelEditCommand}"
+                            Visibility="{Binding IsEditMode, Converter={StaticResource BoolToVisibilityConverter}}"
+                            Style="{StaticResource MaterialDesignFlatButton}"
+                            VerticalAlignment="Center" />
+                </StackPanel>
+
+                <!-- Строка статуса и дат -->
+                <WrapPanel Grid.Row="1" Margin="0,8,0,0">
+                    <!-- View mode -->
                     <TextBlock Text="{Binding Header.Status, StringFormat='Статус: {0}'}" Margin="0,0,16,0"
-                               Foreground="{Binding Header.Status, Converter={StaticResource StatusToColorConverter}}" />
-                    <TextBlock Text="{Binding Header.WeddingDate, StringFormat='Дата: {0:dd.MM.yyyy}'}" Margin="0,0,16,0" />
-                    <TextBlock Text="{Binding Header.LocationCity, StringFormat='Город: {0}'}" Margin="0,0,16,0" />
-                    <TextBlock Text="{Binding Header.BudgetTotal, StringFormat='Бюджет: {0:N0} ₽'}" Margin="0,0,16,0" />
-                    <TextBlock Text="{Binding Header.ManagerName, StringFormat='Менеджер: {0}'}" />
+                               Foreground="{Binding Header.Status, Converter={StaticResource StatusToColorConverter}}"
+                               Visibility="{Binding IsEditMode, Converter={StaticResource InvertBoolConverter}}" />
+                    <TextBlock Text="{Binding Header.WeddingDate, StringFormat='Дата: {0:dd.MM.yyyy}'}" Margin="0,0,16,0"
+                               Visibility="{Binding IsEditMode, Converter={StaticResource InvertBoolConverter}}" />
+                    <TextBlock Text="{Binding Header.LocationCity, StringFormat='Город: {0}'}" Margin="0,0,16,0"
+                               Visibility="{Binding IsEditMode, Converter={StaticResource InvertBoolConverter}}" />
+                    <TextBlock Text="{Binding Header.BudgetTotal, StringFormat='Бюджет: {0:N0} ₽'}" Margin="0,0,16,0"
+                               Visibility="{Binding IsEditMode, Converter={StaticResource InvertBoolConverter}}" />
+                    <TextBlock Text="{Binding Header.ManagerName, StringFormat='Менеджер: {0}'}"
+                               Visibility="{Binding IsEditMode, Converter={StaticResource InvertBoolConverter}}" />
+
+                    <!-- Edit mode -->
+                    <ComboBox Text="{Binding EditStatus}" Width="130" Margin="0,0,8,0"
+                              Visibility="{Binding IsEditMode, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <ComboBoxItem>Новый</ComboBoxItem>
+                        <ComboBoxItem>Открыт</ComboBoxItem>
+                        <ComboBoxItem>Закрыт</ComboBoxItem>
+                    </ComboBox>
+                    <TextBox Text="{Binding EditWeddingDate, StringFormat='{}{0:yyyy-MM-dd}'}" Width="120" Margin="0,0,8,0"
+                             Visibility="{Binding IsEditMode, Converter={StaticResource BoolToVisibilityConverter}}" />
+                    <TextBox Text="{Binding EditLocationCity}" Width="120" Margin="0,0,8,0"
+                             Visibility="{Binding IsEditMode, Converter={StaticResource BoolToVisibilityConverter}}" />
+                    <TextBox Text="{Binding EditBudgetTotal}" Width="120" Margin="0,0,8,0"
+                             Visibility="{Binding IsEditMode, Converter={StaticResource BoolToVisibilityConverter}}" />
                 </WrapPanel>
-                <WrapPanel Margin="0,4,0,0">
+
+                <!-- Счётчики -->
+                <WrapPanel Grid.Row="2" Margin="0,4,0,0">
                     <TextBlock Text="{Binding Header.ClientCount, StringFormat='Клиентов: {0}'}" Margin="0,0,16,0" FontWeight="Bold" />
                     <TextBlock Text="{Binding Header.ContractorCount, StringFormat='Подрядчиков: {0}'}" Margin="0,0,16,0" FontWeight="Bold" />
                     <TextBlock Text="{Binding Header.GuestCount, StringFormat='Гостей: {0}'}" FontWeight="Bold" />
                 </WrapPanel>
-            </StackPanel>
+            </Grid>
         </Border>
 
         <!-- Вкладки -->
@@ -220,6 +277,23 @@
                 </Grid>
             </TabItem>
 
+            <!-- ТАЙМЛАЙН -->
+            <TabItem Header="Таймлайн" PreviewMouseLeftButtonDown="OnTimelineTabSelected">
+                <Grid Margin="12">
+                    <DataGrid ItemsSource="{Binding TimelineEvents}" AutoGenerateColumns="False" IsReadOnly="True"
+                              ColumnWidth="*">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Начало" Binding="{Binding StartTime, StringFormat='{}{0:HH:mm}'}" Width="70" />
+                            <DataGridTextColumn Header="Конец" Binding="{Binding EndTime, StringFormat='{}{0:HH:mm}'}" Width="70" />
+                            <DataGridTextColumn Header="Описание" Binding="{Binding Description}" Width="*" />
+                            <DataGridTextColumn Header="Локация" Binding="{Binding Location}" Width="140" />
+                            <DataGridTextColumn Header="Ответственный" Binding="{Binding ResponsiblePerson}" Width="140" />
+                            <DataGridTextColumn Header="Заметки" Binding="{Binding Notes}" Width="160" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+
             <!-- ФИНАНСЫ -->
             <TabItem Header="Финансы" PreviewMouseLeftButtonDown="OnFinanceTabSelected">
                 <Grid Margin="12">
@@ -247,23 +321,6 @@
                             <DataGridTextColumn Header="Сумма" Binding="{Binding Amount, StringFormat='{}{0:N0} ₽'}" Width="120" />
                             <DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="100" />
                             <DataGridTextColumn Header="Дата" Binding="{Binding Date, StringFormat='{}{0:dd.MM.yyyy}'}" Width="100" />
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </Grid>
-            </TabItem>
-
-            <!-- ТАЙМЛАЙН -->
-            <TabItem Header="Таймлайн" PreviewMouseLeftButtonDown="OnTimelineTabSelected">
-                <Grid Margin="12">
-                    <DataGrid ItemsSource="{Binding TimelineEvents}" AutoGenerateColumns="False" IsReadOnly="True"
-                  ColumnWidth="*">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Начало" Binding="{Binding StartTime, StringFormat='{}{0:HH:mm}'}" Width="70" />
-                            <DataGridTextColumn Header="Конец" Binding="{Binding EndTime, StringFormat='{}{0:HH:mm}'}" Width="70" />
-                            <DataGridTextColumn Header="Описание" Binding="{Binding Description}" Width="*" />
-                            <DataGridTextColumn Header="Локация" Binding="{Binding Location}" Width="140" />
-                            <DataGridTextColumn Header="Ответственный" Binding="{Binding ResponsiblePerson}" Width="140" />
-                            <DataGridTextColumn Header="Заметки" Binding="{Binding Notes}" Width="160" />
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
