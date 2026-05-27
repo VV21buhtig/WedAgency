@@ -59,7 +59,21 @@ public class ProjectGuestsService : IProjectGuestsService
             await _context.SaveChangesAsync();
         }
     }
+    public async Task UpdateGuestAsync(int projectPersonId, string? invitationStatus, string? dietary, bool transfer, bool accommodation, int? tableNumber)
+    {
+        var guest = await _context.ProjectGuests
+            .FirstOrDefaultAsync(g => g.ProjectPersonId == projectPersonId);
 
+        if (guest != null)
+        {
+            guest.InvitationStatus = invitationStatus;
+            guest.DietaryRestrictions = dietary;
+            guest.TransferNeeded = transfer;
+            guest.AccommodationNeeded = accommodation;
+            guest.TableId = tableNumber;
+            await _context.SaveChangesAsync();
+        }
+    }
     public async Task RemoveGuestAsync(int projectId, int personId)
     {
         var pp = await _context.ProjectPeople

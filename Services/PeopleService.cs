@@ -20,7 +20,10 @@ public class PeopleService : IPeopleService
             .OrderByDescending(p => p.CreatedAt)
             .ToListAsync();
     }
-
+    public async Task<Person?> GetByIdAsync(int id)
+    {
+        return await _context.People.FindAsync(id);
+    }
     public async Task<List<Person>> GetFilteredAsync(string? search, string? roleFilter)
     {
         var query = _context.People
@@ -58,9 +61,20 @@ public class PeopleService : IPeopleService
             .ToListAsync();
     }
 
-    public async Task<Person?> GetByIdAsync(int id)
+    public async Task<Person> CreatePersonAsync(string fullName, string? phone, string? email)
     {
-        return await _context.People.FindAsync(id);
+        var person = new Person
+        {
+            FullName = fullName,
+            PhonePrimary = phone ?? "-",
+            Email = email,
+            IsDeleted = false,
+            CreatedAt = DateTime.Now,
+            UpdatedAt = DateTime.Now
+        };
+        _context.People.Add(person);
+        await _context.SaveChangesAsync();
+        return person;
     }
 
     public async Task UpdatePersonAsync(Person person)

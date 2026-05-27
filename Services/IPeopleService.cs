@@ -9,5 +9,6 @@ public interface IPeopleService
     Task<Person?> GetByIdAsync(int id);
     Task UpdatePersonAsync(Person person);
     Task DeactivatePersonAsync(int personId);
+    Task<Person> CreatePersonAsync(string fullName, string? phone, string? email);
     Task<List<string>> GetRolesAsync(int personId);
 }

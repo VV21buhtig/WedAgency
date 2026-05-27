@@ -13,14 +13,53 @@
         </x:Array>
     </UserControl.Resources>
 
-    <Grid Margin="16">
+    <Grid Margin="20">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
+        <!-- ПАНЕЛЬ ДОБАВЛЕНИЯ -->
+        <Border Grid.Row="0"
+                Background="{DynamicResource MaterialDesignPaper}"
+                CornerRadius="6"
+                Padding="16"
+                Margin="0,0,0,16">
+            <StackPanel>
+                <TextBlock Text="Новый человек"
+                           Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
+                           Margin="0,0,0,8"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox Grid.Column="0"
+                             Text="{Binding NewPersonName, UpdateSourceTrigger=PropertyChanged}"
+                             materialDesign:HintAssist.Hint="ФИО"
+                             Margin="0,0,8,0"/>
+                    <TextBox Grid.Column="1"
+                             Text="{Binding NewPersonPhone, UpdateSourceTrigger=PropertyChanged}"
+                             materialDesign:HintAssist.Hint="Телефон"
+                             Margin="0,0,8,0"/>
+                    <TextBox Grid.Column="2"
+                             Text="{Binding NewPersonEmail, UpdateSourceTrigger=PropertyChanged}"
+                             materialDesign:HintAssist.Hint="Email"
+                             Margin="0,0,8,0"/>
+                    <Button Grid.Column="3"
+                            Content="Добавить"
+                            Command="{Binding AddPersonCommand}"
+                            Style="{StaticResource MaterialDesignRaisedButton}"/>
+                </Grid>
+            </StackPanel>
+        </Border>
+
+        <!-- ПОИСК И ФИЛЬТР -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,12">
             <TextBox materialDesign:HintAssist.Hint="Поиск по имени или телефону"
                      Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                      Width="250" Margin="0,0,12,0" />
@@ -29,7 +68,8 @@
                       Width="140" />
         </StackPanel>
 
-        <DataGrid Grid.Row="1"
+        <!-- ТАБЛИЦА -->
+        <DataGrid Grid.Row="2"
                   ItemsSource="{Binding People}"
                   SelectedItem="{Binding SelectedPerson}"
                   AutoGenerateColumns="False"
@@ -42,7 +82,8 @@
             </DataGrid.Columns>
         </DataGrid>
 
-        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,8,0,0">
+        <!-- КНОПКИ ДЕЙСТВИЙ -->
+        <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,8,0,0">
             <Button Content="Архивировать"
                     Command="{Binding ArchivePersonCommand}"
                     IsEnabled="{Binding SelectedPerson, Converter={StaticResource IsNotNullConverter}}"

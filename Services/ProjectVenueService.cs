@@ -31,4 +31,39 @@ public class ProjectVenueService : IProjectVenueService
             })
             .ToListAsync();
     }
+
+    public async Task<List<VenuesCatalog>> SearchVenuesAsync(string? search)
+    {
+        var query = _context.VenuesCatalogs.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(search))
+            query = query.Where(v => v.Name.Contains(search) || v.City.Contains(search));
+
+        return await query.Take(10).ToListAsync();
+    }
+
+    public async Task AddVenueAsync(int projectId, int venueId, decimal? rentalCost, decimal? deposit, DateOnly? eventDate)
+    {
+        var booking = new VenueBooking
+        {
+            ProjectId = projectId,
+            VenueId = venueId,
+            RentalCost = rentalCost,
+            DepositAmount = deposit,
+            EventDate = eventDate,
+            Status = "Забронировано"
+        };
+        _context.VenueBookings.Add(booking);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task RemoveVenueAsync(int bookingId)
+    {
+        var booking = await _context.VenueBookings.FindAsync(bookingId);
+        if (booking != null)
+        {
+            _context.VenueBookings.Remove(booking);
+            await _context.SaveChangesAsync();
+        }
+    }
 }

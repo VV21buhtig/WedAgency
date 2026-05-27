@@ -32,22 +32,28 @@ public partial class MainWindowViewModel : BaseViewModel
         switch (parameter)
         {
             case "Dashboard":
-                _navigationService.NavigateTo<DashboardViewModel>();
+                if (CurrentViewModel is not DashboardViewModel)
+                    _navigationService.NavigateTo<DashboardViewModel>();
                 break;
             case "People":
-                _navigationService.NavigateTo<PeopleViewModel>();
+                if (CurrentViewModel is not PeopleViewModel)
+                    _navigationService.NavigateTo<PeopleViewModel>();
                 break;
             case "Projects":
-                _navigationService.NavigateTo<ProjectsViewModel>();
+                if (CurrentViewModel is not ProjectsViewModel)
+                    _navigationService.NavigateTo<ProjectsViewModel>();
                 break;
             case "Venues":
-                _navigationService.NavigateTo<VenuesViewModel>();
+                if (CurrentViewModel is not VenuesViewModel)
+                    _navigationService.NavigateTo<VenuesViewModel>();
                 break;
             case "Finance":
-                _navigationService.NavigateTo<FinanceViewModel>();
+                if (CurrentViewModel is not FinanceViewModel)
+                    _navigationService.NavigateTo<FinanceViewModel>();
                 break;
             case "Contractors":
-                _navigationService.NavigateTo<ContractorsViewModel>();
+                if (CurrentViewModel is not ContractorsViewModel)
+                    _navigationService.NavigateTo<ContractorsViewModel>();
                 break;
         }
     }
@@ -55,13 +61,11 @@ public partial class MainWindowViewModel : BaseViewModel
     [RelayCommand]
     private void Logout()
     {
-        // Закрываем главное окно
         var mainWindow = Application.Current.Windows
             .OfType<MainWindow>()
             .FirstOrDefault();
         mainWindow?.Close();
 
-        // Открываем окно логина
         var loginWindow = _serviceProvider.GetRequiredService<LoginWindow>();
         loginWindow.Show();
     }

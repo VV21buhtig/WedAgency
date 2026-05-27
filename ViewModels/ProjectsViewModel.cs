@@ -6,6 +6,7 @@ using System.Collections.ObjectModel;
 using WeddingAgency.Models;
 using WeddingAgency.Services;
 using WeddingAgency.ViewModels.Base;
+using WeddingAgency.Views.Windows;
 
 namespace WeddingAgency.ViewModels;
 
@@ -95,14 +96,11 @@ public partial class ProjectsViewModel : BaseViewModel
     [RelayCommand]
     private async Task AddProject()
     {
-        await _projectService.CreateProjectAsync(
-            "PRJ-" + DateTime.Now.ToString("yyyyMMdd-HHmm"),
-            DateOnly.FromDateTime(DateTime.Now.AddMonths(3)),
-            50,
-            500000m,
-            "Москва",
-            null);
-        await LoadProjects();
+        var window = _serviceProvider.GetRequiredService<CreateProjectWindow>();
+        var result = window.ShowDialog();
+
+        if (result == true)
+            await LoadProjects();
     }
 
     [RelayCommand]

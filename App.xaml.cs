@@ -69,6 +69,8 @@ public partial class App : Application
                 services.AddTransient<ChangePasswordWindow>();
                 services.AddTransient<MainWindow>();
                 services.AddTransient<AdminWindow>();
+                services.AddTransient<CreateProjectViewModel>();
+                services.AddTransient<CreateProjectWindow>();
             })
             .Build();
     }

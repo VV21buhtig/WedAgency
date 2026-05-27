@@ -1,0 +1,69 @@
+﻿<Window x:Class="WeddingAgency.Views.Windows.CreateProjectWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        Title="Новый проект"
+        Height="450"
+        Width="500"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        Background="{DynamicResource MaterialDesignBackground}">
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="Новый проект"
+                   Style="{StaticResource MaterialDesignHeadline5TextBlock}"
+                   Margin="0,0,0,20" />
+
+        <StackPanel Grid.Row="1">
+            <TextBox Text="{Binding ProjectNumber, UpdateSourceTrigger=PropertyChanged}"
+                     materialDesign:HintAssist.Hint="Номер проекта"
+                     Margin="0,0,0,12" />
+
+            <DatePicker SelectedDate="{Binding WeddingDate}"
+                        materialDesign:HintAssist.Hint="Дата свадьбы"
+                        Margin="0,0,0,12" />
+
+            <TextBox Text="{Binding LocationCity, UpdateSourceTrigger=PropertyChanged}"
+                     materialDesign:HintAssist.Hint="Город"
+                     Margin="0,0,0,12" />
+
+            <TextBox Text="{Binding BudgetTotal, UpdateSourceTrigger=PropertyChanged}"
+                     materialDesign:HintAssist.Hint="Бюджет"
+                     Margin="0,0,0,12" />
+
+            <TextBox Text="{Binding GuestCount, UpdateSourceTrigger=PropertyChanged}"
+                     materialDesign:HintAssist.Hint="Количество гостей"
+                     Margin="0,0,0,12" />
+
+            <ComboBox ItemsSource="{Binding Managers}"
+                      SelectedItem="{Binding SelectedManager}"
+                      DisplayMemberPath="Person.FullName"
+                      materialDesign:HintAssist.Hint="Менеджер"
+                      Margin="0,0,0,12" />
+
+            <ComboBox Text="{Binding Status}">
+                <ComboBoxItem>Новый</ComboBoxItem>
+                <ComboBoxItem>Открыт</ComboBoxItem>
+            </ComboBox>
+        </StackPanel>
+
+        <StackPanel Grid.Row="2"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Margin="0,20,0,0">
+            <Button Content="Отмена"
+                    Command="{Binding CancelCommand}"
+                    Style="{StaticResource MaterialDesignFlatButton}"
+                    Margin="0,0,8,0" />
+            <Button Content="Создать"
+                    Command="{Binding CreateCommand}"
+                    Style="{StaticResource MaterialDesignRaisedButton}" />
+        </StackPanel>
+    </Grid>
+</Window>

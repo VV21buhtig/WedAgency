@@ -27,7 +27,7 @@ public class UserManagementService : IUserManagementService
         var person = new Person
         {
             FullName = fullName,
-            PhonePrimary = null,
+            PhonePrimary = "-",
             CreatedAt = DateTime.Now,
             UpdatedAt = DateTime.Now
         };

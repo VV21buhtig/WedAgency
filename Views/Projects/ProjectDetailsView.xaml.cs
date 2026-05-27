@@ -62,4 +62,10 @@ public partial class ProjectDetailsView : UserControl
         if (DataContext is ProjectDetailsViewModel vm)
             vm.LoadTimelineCommand.Execute(null);
     }
+
+    private void OnVenueSearchKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter && DataContext is ProjectDetailsViewModel vm)
+            vm.SearchVenuesCommand.Execute(null);
+    }
 }

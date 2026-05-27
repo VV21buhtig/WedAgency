@@ -22,6 +22,7 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
     private readonly IServiceProvider _serviceProvider;
 
     private int _projectId;
+    private bool _isLoading;
 
     [ObservableProperty]
     private ProjectHeaderModel? _header;
@@ -66,6 +67,22 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
     [ObservableProperty]
     private ObservableCollection<VenueItemModel> _venues = new();
 
+    // Поиск площадок
+    [ObservableProperty]
+    private string _venueSearchText = string.Empty;
+
+    [ObservableProperty]
+    private ObservableCollection<VenuesCatalog> _venueSearchResults = new();
+
+    [ObservableProperty]
+    private decimal? _newVenueRentalCost;
+
+    [ObservableProperty]
+    private decimal? _newVenueDeposit;
+
+    [ObservableProperty]
+    private DateOnly? _newVenueEventDate;
+
     // Таймлайн
     [ObservableProperty]
     private ObservableCollection<TimelineEventItem> _timelineEvents = new();
@@ -102,6 +119,13 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
     [ObservableProperty]
     private string? _editStatus;
 
+    // Менеджеры для выбора
+    [ObservableProperty]
+    private ObservableCollection<User> _managers = new();
+
+    [ObservableProperty]
+    private User? _selectedManager;
+
     public override string Title => $"Проект: {Header?.ProjectNumber ?? ""}";
 
     public ProjectDetailsViewModel(
@@ -124,34 +148,79 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
         _serviceProvider = serviceProvider;
     }
 
-    public void OnNavigatedTo(object? parameter)
+    public async void OnNavigatedTo(object? parameter)
     {
         if (parameter is int projectId)
         {
+            // Если уже загружен этот же проект — ничего не делаем
+            if (_projectId == projectId && Header != null)
+                return;
+
+            if (_isLoading) return;
+
             _projectId = projectId;
-            _ = LoadHeaderAsync();
+            _isLoading = true;
+
+            try
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<WeddingAgencyContext>();
+                var p = await context.Projects
+                    .Include(p => p.ResponsibleManager)
+                    .Include(p => p.ProjectPeople)
+                    .FirstOrDefaultAsync(p => p.Id == projectId);
+
+                if (p != null)
+                {
+                    Header = new ProjectHeaderModel
+                    {
+                        Id = p.Id,
+                        ProjectNumber = p.ProjectNumber,
+                        WeddingDate = p.WeddingDate,
+                        Status = p.Status ?? "",
+                        BudgetTotal = p.BudgetTotal,
+                        GuestCountMin = p.GuestCountMin,
+                        LocationCity = p.LocationCity,
+                        ManagerName = p.ResponsibleManager?.FullName ?? "Не назначен",
+                        ClientCount = p.ProjectPeople.Count(pp => pp.Role == "Client"),
+                        ContractorCount = p.ProjectPeople.Count(pp => pp.Role == "Contractor"),
+                        GuestCount = p.ProjectPeople.Count(pp => pp.Role == "Guest")
+                    };
+                    OnPropertyChanged(nameof(Title));
+                }
+            }
+            finally
+            {
+                _isLoading = false;
+            }
         }
     }
-
-    private async Task LoadHeaderAsync()
-    {
-        Header = await _overviewService.GetHeaderAsync(_projectId);
-        OnPropertyChanged(nameof(Title));
-    }
-
     // ========== EDIT MODE ==========
 
     [RelayCommand]
-    private void EnableEditMode()
+    private async Task EnableEditMode()
     {
         if (Header == null) return;
 
-        EditProjectNumber = Header.ProjectNumber;
-        EditWeddingDate = Header.WeddingDate;
-        EditLocationCity = Header.LocationCity;
-        EditBudgetTotal = Header.BudgetTotal;
-        EditGuestCount = Header.GuestCountMin;
-        EditStatus = Header.Status;
+        using var scope = _serviceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<WeddingAgencyContext>();
+        var project = await context.Projects.FindAsync(_projectId);
+
+        if (project == null) return;
+
+        EditProjectNumber = project.ProjectNumber;
+        EditWeddingDate = project.WeddingDate;
+        EditLocationCity = project.LocationCity;
+        EditBudgetTotal = project.BudgetTotal;
+        EditGuestCount = project.GuestCountMin;
+        EditStatus = project.Status;
+
+        var users = await context.Users
+            .Include(u => u.Person)
+            .Where(u => u.IsActive)
+            .ToListAsync();
+        Managers = new ObservableCollection<User>(users);
+        SelectedManager = users.FirstOrDefault(u => u.Id == project.ResponsibleManagerId);
 
         IsEditMode = true;
     }
@@ -179,10 +248,10 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
         project.BudgetTotal = EditBudgetTotal;
         project.GuestCountMin = EditGuestCount;
         project.Status = EditStatus ?? Header.Status;
+        project.ResponsibleManagerId = SelectedManager?.PersonId;
 
         await context.SaveChangesAsync();
 
-        // Обновляем Header напрямую, без запроса к БД
         Header = new ProjectHeaderModel
         {
             Id = Header.Id,
@@ -192,7 +261,7 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
             BudgetTotal = project.BudgetTotal,
             GuestCountMin = project.GuestCountMin,
             LocationCity = project.LocationCity,
-            ManagerName = Header.ManagerName,
+            ManagerName = SelectedManager?.Person?.FullName ?? "Не назначен",
             ClientCount = Header.ClientCount,
             ContractorCount = Header.ContractorCount,
             GuestCount = Header.GuestCount
@@ -201,6 +270,7 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
 
         IsEditMode = false;
     }
+
     private WeddingAgencyContext GetContext() => _serviceProvider.GetRequiredService<WeddingAgencyContext>();
 
     // ========== КЛИЕНТЫ ==========
@@ -238,7 +308,7 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
         ClientSearchText = string.Empty;
         ClientSearchResults.Clear();
         await LoadClientsAsync();
-        await LoadHeaderAsync();
+        await RefreshHeaderAsync();
     }
 
     [RelayCommand]
@@ -247,7 +317,7 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
         if (client == null) return;
         await _peopleService.RemoveClientAsync(_projectId, client.PersonId);
         await LoadClientsAsync();
-        await LoadHeaderAsync();
+        await RefreshHeaderAsync();
     }
 
     // ========== ПОДРЯДЧИКИ ==========
@@ -287,16 +357,29 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
         ContractorCost = null;
         ContractorSearchResults.Clear();
         await LoadContractorsAsync();
-        await LoadHeaderAsync();
+        await RefreshHeaderAsync();
     }
-
+    [RelayCommand]
+    private async Task SaveGuestsAsync()
+    {
+        foreach (var guest in Guests)
+        {
+            await _guestsService.UpdateGuestAsync(
+                guest.Id,
+                guest.InvitationStatus,
+                guest.DietaryRestrictions,
+                guest.TransferNeeded,
+                guest.AccommodationNeeded,
+                guest.TableNumber);
+        }
+    }
     [RelayCommand]
     private async Task RemoveContractorAsync(ContractorListItem? contractor)
     {
         if (contractor == null) return;
         await _peopleService.RemoveContractorAsync(_projectId, contractor.PersonId);
         await LoadContractorsAsync();
-        await LoadHeaderAsync();
+        await RefreshHeaderAsync();
     }
 
     // ========== ГОСТИ ==========
@@ -334,7 +417,7 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
         GuestSearchText = string.Empty;
         GuestSearchResults.Clear();
         await LoadGuestsAsync();
-        await LoadHeaderAsync();
+        await RefreshHeaderAsync();
     }
 
     [RelayCommand]
@@ -343,7 +426,7 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
         if (guest == null) return;
         await _guestsService.RemoveGuestAsync(_projectId, guest.PersonId);
         await LoadGuestsAsync();
-        await LoadHeaderAsync();
+        await RefreshHeaderAsync();
     }
 
     // ========== ПЛОЩАДКА ==========
@@ -353,6 +436,39 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
     {
         var list = await _venueService.GetVenuesAsync(_projectId);
         Venues = new ObservableCollection<VenueItemModel>(list);
+    }
+
+    [RelayCommand]
+    private async Task SearchVenuesAsync()
+    {
+        if (string.IsNullOrWhiteSpace(VenueSearchText))
+        {
+            VenueSearchResults.Clear();
+            return;
+        }
+        var results = await _venueService.SearchVenuesAsync(VenueSearchText);
+        VenueSearchResults = new ObservableCollection<VenuesCatalog>(results);
+    }
+
+    [RelayCommand]
+    private async Task AddVenueAsync(VenuesCatalog? venue)
+    {
+        if (venue == null) return;
+        await _venueService.AddVenueAsync(_projectId, venue.Id, NewVenueRentalCost, NewVenueDeposit, NewVenueEventDate);
+        VenueSearchText = string.Empty;
+        NewVenueRentalCost = null;
+        NewVenueDeposit = null;
+        NewVenueEventDate = null;
+        VenueSearchResults.Clear();
+        await LoadVenuesAsync();
+    }
+
+    [RelayCommand]
+    private async Task RemoveVenueAsync(VenueItemModel? venue)
+    {
+        if (venue == null) return;
+        await _venueService.RemoveVenueAsync(venue.BookingId);
+        await LoadVenuesAsync();
     }
 
     // ========== ТАЙМЛАЙН ==========
@@ -390,5 +506,34 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
     private void GoBack()
     {
         _navigation.NavigateTo<ProjectsViewModel>();
+    }
+
+    private async Task RefreshHeaderAsync()
+    {
+        using var scope = _serviceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<WeddingAgencyContext>();
+        var p = await context.Projects
+            .Include(p => p.ResponsibleManager)
+            .Include(p => p.ProjectPeople)
+            .FirstOrDefaultAsync(p => p.Id == _projectId);
+
+        if (p != null && Header != null)
+        {
+            Header = new ProjectHeaderModel
+            {
+                Id = Header.Id,
+                ProjectNumber = p.ProjectNumber,
+                WeddingDate = p.WeddingDate,
+                Status = p.Status ?? "",
+                BudgetTotal = p.BudgetTotal,
+                GuestCountMin = p.GuestCountMin,
+                LocationCity = p.LocationCity,
+                ManagerName = p.ResponsibleManager?.FullName ?? "Не назначен",
+                ClientCount = p.ProjectPeople.Count(pp => pp.Role == "Client"),
+                ContractorCount = p.ProjectPeople.Count(pp => pp.Role == "Contractor"),
+                GuestCount = p.ProjectPeople.Count(pp => pp.Role == "Guest")
+            };
+            OnPropertyChanged(nameof(Title));
+        }
     }
 }

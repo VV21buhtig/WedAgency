@@ -25,6 +25,27 @@ public partial class PeopleViewModel : BaseViewModel
 
     [ObservableProperty]
     private ObservableCollection<string> _selectedRoles = new();
+    // Поля для добавления
+    [ObservableProperty]
+    private string _newPersonName = string.Empty;
+
+    [ObservableProperty]
+    private string _newPersonPhone = string.Empty;
+
+    [ObservableProperty]
+    private string _newPersonEmail = string.Empty;
+
+    [RelayCommand]
+    private async Task AddPersonAsync()
+    {
+        if (string.IsNullOrWhiteSpace(NewPersonName)) return;
+
+        await _peopleService.CreatePersonAsync(NewPersonName.Trim(), NewPersonPhone.Trim(), NewPersonEmail.Trim());
+        NewPersonName = string.Empty;
+        NewPersonPhone = string.Empty;
+        NewPersonEmail = string.Empty;
+        await LoadPeople();
+    }
 
     public string RolesDisplay =>
         SelectedRoles.Any()

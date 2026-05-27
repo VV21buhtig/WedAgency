@@ -72,16 +72,17 @@
    1. [AdminUsersViewModel.cs](#adminusersviewmodelcs)
    2. [ChangePasswordViewModel.cs](#changepasswordviewmodelcs)
    3. [ContractorsViewModel.cs](#contractorsviewmodelcs)
-   4. [DashboardViewModel.cs](#dashboardviewmodelcs)
-   5. [FinanceViewModel.cs](#financeviewmodelcs)
-   6. [GlobalUsings.cs](#globalusingscs)
-   7. [LoginViewModel.cs](#loginviewmodelcs)
-   8. [MainWindowViewModel.cs](#mainwindowviewmodelcs)
-   9. [PeopleViewModel.cs](#peopleviewmodelcs)
-   10. [ProjectDetailsViewModel.cs](#projectdetailsviewmodelcs)
-   11. [ProjectListItem.cs](#projectlistitemcs)
-   12. [ProjectsViewModel.cs](#projectsviewmodelcs)
-   13. [VenuesViewModel.cs](#venuesviewmodelcs)
+   4. [CreateProjectViewModel.cs](#createprojectviewmodelcs)
+   5. [DashboardViewModel.cs](#dashboardviewmodelcs)
+   6. [FinanceViewModel.cs](#financeviewmodelcs)
+   7. [GlobalUsings.cs](#globalusingscs)
+   8. [LoginViewModel.cs](#loginviewmodelcs)
+   9. [MainWindowViewModel.cs](#mainwindowviewmodelcs)
+   10. [PeopleViewModel.cs](#peopleviewmodelcs)
+   11. [ProjectDetailsViewModel.cs](#projectdetailsviewmodelcs)
+   12. [ProjectListItem.cs](#projectlistitemcs)
+   13. [ProjectsViewModel.cs](#projectsviewmodelcs)
+   14. [VenuesViewModel.cs](#venuesviewmodelcs)
 11. [Viewmodels/Base](#viewmodels-base)
    1. [BaseViewModel.cs](#baseviewmodelcs)
 12. [Viewmodels/Projectdetails](#viewmodels-projectdetails)
@@ -120,10 +121,12 @@
    2. [AdminWindow.xaml.cs](#adminwindowxamlcs)
    3. [ChangePasswordWindow.xaml](#changepasswordwindowxaml)
    4. [ChangePasswordWindow.xaml.cs](#changepasswordwindowxamlcs)
-   5. [LoginWindow.xaml](#loginwindowxaml)
-   6. [LoginWindow.xaml.cs](#loginwindowxamlcs)
-   7. [MainWindow.xaml](#mainwindowxaml)
-   8. [MainWindow.xaml.cs](#mainwindowxamlcs)
+   5. [CreateProjectWindow.xaml](#createprojectwindowxaml)
+   6. [CreateProjectWindow.xaml.cs](#createprojectwindowxamlcs)
+   7. [LoginWindow.xaml](#loginwindowxaml)
+   8. [LoginWindow.xaml.cs](#loginwindowxamlcs)
+   9. [MainWindow.xaml](#mainwindowxaml)
+   10. [MainWindow.xaml.cs](#mainwindowxamlcs)
 
 ## FILE 1: App.xaml
 
@@ -260,6 +263,8 @@ public partial class App : Application
                 services.AddTransient<ChangePasswordWindow>();
                 services.AddTransient<MainWindow>();
                 services.AddTransient<AdminWindow>();
+                services.AddTransient<CreateProjectViewModel>();
+                services.AddTransient<CreateProjectWindow>();
             })
             .Build();
     }
@@ -2214,6 +2219,7 @@ public interface IPeopleService
     Task<Person?> GetByIdAsync(int id);
     Task UpdatePersonAsync(Person person);
     Task DeactivatePersonAsync(int personId);
+    Task<Person> CreatePersonAsync(string fullName, string? phone, string? email);
     Task<List<string>> GetRolesAsync(int personId);
 }
 ```
@@ -2303,6 +2309,7 @@ public interface IProjectGuestsService
     Task<List<GuestListItem>> GetGuestsAsync(int projectId);
     Task AddGuestAsync(int projectId, int personId);
     Task RemoveGuestAsync(int projectId, int personId);
+    Task UpdateGuestAsync(int projectPersonId, string? invitationStatus, string? dietary, bool transfer, bool accommodation, int? tableNumber);
 }
 ```
 
@@ -2391,13 +2398,17 @@ public interface IProjectTimelineService
 <a id='iprojectvenueservicecs'></a>
 
 ```csharp
-﻿using WeddingAgency.ViewModels.ProjectDetails;
+﻿using WeddingAgency.Models;
+using WeddingAgency.ViewModels.ProjectDetails;
 
 namespace WeddingAgency.Services;
 
 public interface IProjectVenueService
 {
     Task<List<VenueItemModel>> GetVenuesAsync(int projectId);
+    Task<List<VenuesCatalog>> SearchVenuesAsync(string? search);
+    Task AddVenueAsync(int projectId, int venueId, decimal? rentalCost, decimal? deposit, DateOnly? eventDate);
+    Task RemoveVenueAsync(int bookingId);
 }
 ```
 
@@ -2502,7 +2513,10 @@ public class PeopleService : IPeopleService
             .OrderByDescending(p => p.CreatedAt)
             .ToListAsync();
     }
-
+    public async Task<Person?> GetByIdAsync(int id)
+    {
+        return await _context.People.FindAsync(id);
+    }
     public async Task<List<Person>> GetFilteredAsync(string? search, string? roleFilter)
     {
         var query = _context.People
@@ -2540,9 +2554,20 @@ public class PeopleService : IPeopleService
             .ToListAsync();
     }
 
-    public async Task<Person?> GetByIdAsync(int id)
+    public async Task<Person> CreatePersonAsync(string fullName, string? phone, string? email)
     {
-        return await _context.People.FindAsync(id);
+        var person = new Person
+        {
+            FullName = fullName,
+            PhonePrimary = phone ?? "-",
+            Email = email,
+            IsDeleted = false,
+            CreatedAt = DateTime.Now,
+            UpdatedAt = DateTime.Now
+        };
+        _context.People.Add(person);
+        await _context.SaveChangesAsync();
+        return person;
     }
 
     public async Task UpdatePersonAsync(Person person)
@@ -2863,7 +2888,21 @@ public class ProjectGuestsService : IProjectGuestsService
             await _context.SaveChangesAsync();
         }
     }
+    public async Task UpdateGuestAsync(int projectPersonId, string? invitationStatus, string? dietary, bool transfer, bool accommodation, int? tableNumber)
+    {
+        var guest = await _context.ProjectGuests
+            .FirstOrDefaultAsync(g => g.ProjectPersonId == projectPersonId);
 
+        if (guest != null)
+        {
+            guest.InvitationStatus = invitationStatus;
+            guest.DietaryRestrictions = dietary;
+            guest.TransferNeeded = transfer;
+            guest.AccommodationNeeded = accommodation;
+            guest.TableId = tableNumber;
+            await _context.SaveChangesAsync();
+        }
+    }
     public async Task RemoveGuestAsync(int projectId, int personId)
     {
         var pp = await _context.ProjectPeople
@@ -3225,6 +3264,41 @@ public class ProjectVenueService : IProjectVenueService
             })
             .ToListAsync();
     }
+
+    public async Task<List<VenuesCatalog>> SearchVenuesAsync(string? search)
+    {
+        var query = _context.VenuesCatalogs.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(search))
+            query = query.Where(v => v.Name.Contains(search) || v.City.Contains(search));
+
+        return await query.Take(10).ToListAsync();
+    }
+
+    public async Task AddVenueAsync(int projectId, int venueId, decimal? rentalCost, decimal? deposit, DateOnly? eventDate)
+    {
+        var booking = new VenueBooking
+        {
+            ProjectId = projectId,
+            VenueId = venueId,
+            RentalCost = rentalCost,
+            DepositAmount = deposit,
+            EventDate = eventDate,
+            Status = "Забронировано"
+        };
+        _context.VenueBookings.Add(booking);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task RemoveVenueAsync(int bookingId)
+    {
+        var booking = await _context.VenueBookings.FindAsync(bookingId);
+        if (booking != null)
+        {
+            _context.VenueBookings.Remove(booking);
+            await _context.SaveChangesAsync();
+        }
+    }
 }
 ```
 
@@ -3264,7 +3338,7 @@ public class UserManagementService : IUserManagementService
         var person = new Person
         {
             FullName = fullName,
-            PhonePrimary = null,
+            PhonePrimary = "-",
             CreatedAt = DateTime.Now,
             UpdatedAt = DateTime.Now
         };
@@ -3666,7 +3740,103 @@ public partial class ContractorsViewModel : BaseViewModel
 
 ---
 
-## FILE 66: DashboardViewModel.cs
+## FILE 66: CreateProjectViewModel.cs
+
+<a id='createprojectviewmodelcs'></a>
+
+```csharp
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using System.Collections.ObjectModel;
+using WeddingAgency.Models;
+using WeddingAgency.Services;
+using WeddingAgency.ViewModels.Base;
+
+namespace WeddingAgency.ViewModels;
+
+public partial class CreateProjectViewModel : BaseViewModel
+{
+    private readonly IProjectService _projectService;
+    private readonly IServiceProvider _serviceProvider;
+
+    [ObservableProperty]
+    private string _projectNumber = string.Empty;
+
+    [ObservableProperty]
+    private DateOnly? _weddingDate = DateOnly.FromDateTime(DateTime.Now.AddMonths(3));
+
+    [ObservableProperty]
+    private string? _locationCity;
+
+    [ObservableProperty]
+    private decimal? _budgetTotal;
+
+    [ObservableProperty]
+    private int? _guestCount = 50;
+
+    [ObservableProperty]
+    private string _status = "Новый";
+
+    [ObservableProperty]
+    private ObservableCollection<User> _managers = new();
+
+    [ObservableProperty]
+    private User? _selectedManager;
+
+    public event Action? ProjectCreated;
+    public event Action? Cancelled;
+
+    public override string Title => "Новый проект";
+
+    public CreateProjectViewModel(IProjectService projectService, IServiceProvider serviceProvider)
+    {
+        _projectService = projectService;
+        _serviceProvider = serviceProvider;
+        ProjectNumber = "PRJ-" + DateTime.Now.ToString("yyyyMMdd-HHmm");
+        _ = LoadManagersAsync();
+    }
+
+    private async Task LoadManagersAsync()
+    {
+        using var scope = _serviceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<WeddingAgencyContext>();
+        var users = await context.Users
+            .Include(u => u.Person)
+            .Where(u => u.IsActive)
+            .ToListAsync();
+        Managers = new ObservableCollection<User>(users);
+    }
+
+    [RelayCommand]
+    private async Task CreateAsync()
+    {
+        if (string.IsNullOrWhiteSpace(ProjectNumber))
+            return;
+
+        await _projectService.CreateProjectAsync(
+            ProjectNumber,
+            WeddingDate,
+            GuestCount,
+            BudgetTotal,
+            LocationCity,
+            SelectedManager?.PersonId);
+
+        ProjectCreated?.Invoke();
+    }
+
+    [RelayCommand]
+    private void Cancel()
+    {
+        Cancelled?.Invoke();
+    }
+}
+```
+
+---
+
+## FILE 67: DashboardViewModel.cs
 
 <a id='dashboardviewmodelcs'></a>
 
@@ -3683,7 +3853,7 @@ public partial class DashboardViewModel : BaseViewModel
 
 ---
 
-## FILE 67: FinanceViewModel.cs
+## FILE 68: FinanceViewModel.cs
 
 <a id='financeviewmodelcs'></a>
 
@@ -3700,7 +3870,7 @@ public partial class FinanceViewModel : BaseViewModel
 
 ---
 
-## FILE 68: GlobalUsings.cs
+## FILE 69: GlobalUsings.cs
 
 <a id='globalusingscs'></a>
 
@@ -3711,7 +3881,7 @@ global using CommunityToolkit.Mvvm.Input;
 
 ---
 
-## FILE 69: LoginViewModel.cs
+## FILE 70: LoginViewModel.cs
 
 <a id='loginviewmodelcs'></a>
 
@@ -3794,7 +3964,7 @@ public partial class LoginViewModel : BaseViewModel
 
 ---
 
-## FILE 70: MainWindowViewModel.cs
+## FILE 71: MainWindowViewModel.cs
 
 <a id='mainwindowviewmodelcs'></a>
 
@@ -3833,22 +4003,28 @@ public partial class MainWindowViewModel : BaseViewModel
         switch (parameter)
         {
             case "Dashboard":
-                _navigationService.NavigateTo<DashboardViewModel>();
+                if (CurrentViewModel is not DashboardViewModel)
+                    _navigationService.NavigateTo<DashboardViewModel>();
                 break;
             case "People":
-                _navigationService.NavigateTo<PeopleViewModel>();
+                if (CurrentViewModel is not PeopleViewModel)
+                    _navigationService.NavigateTo<PeopleViewModel>();
                 break;
             case "Projects":
-                _navigationService.NavigateTo<ProjectsViewModel>();
+                if (CurrentViewModel is not ProjectsViewModel)
+                    _navigationService.NavigateTo<ProjectsViewModel>();
                 break;
             case "Venues":
-                _navigationService.NavigateTo<VenuesViewModel>();
+                if (CurrentViewModel is not VenuesViewModel)
+                    _navigationService.NavigateTo<VenuesViewModel>();
                 break;
             case "Finance":
-                _navigationService.NavigateTo<FinanceViewModel>();
+                if (CurrentViewModel is not FinanceViewModel)
+                    _navigationService.NavigateTo<FinanceViewModel>();
                 break;
             case "Contractors":
-                _navigationService.NavigateTo<ContractorsViewModel>();
+                if (CurrentViewModel is not ContractorsViewModel)
+                    _navigationService.NavigateTo<ContractorsViewModel>();
                 break;
         }
     }
@@ -3856,13 +4032,11 @@ public partial class MainWindowViewModel : BaseViewModel
     [RelayCommand]
     private void Logout()
     {
-        // Закрываем главное окно
         var mainWindow = Application.Current.Windows
             .OfType<MainWindow>()
             .FirstOrDefault();
         mainWindow?.Close();
 
-        // Открываем окно логина
         var loginWindow = _serviceProvider.GetRequiredService<LoginWindow>();
         loginWindow.Show();
     }
@@ -3877,7 +4051,7 @@ public partial class MainWindowViewModel : BaseViewModel
 
 ---
 
-## FILE 71: PeopleViewModel.cs
+## FILE 72: PeopleViewModel.cs
 
 <a id='peopleviewmodelcs'></a>
 
@@ -3909,6 +4083,27 @@ public partial class PeopleViewModel : BaseViewModel
 
     [ObservableProperty]
     private ObservableCollection<string> _selectedRoles = new();
+    // Поля для добавления
+    [ObservableProperty]
+    private string _newPersonName = string.Empty;
+
+    [ObservableProperty]
+    private string _newPersonPhone = string.Empty;
+
+    [ObservableProperty]
+    private string _newPersonEmail = string.Empty;
+
+    [RelayCommand]
+    private async Task AddPersonAsync()
+    {
+        if (string.IsNullOrWhiteSpace(NewPersonName)) return;
+
+        await _peopleService.CreatePersonAsync(NewPersonName.Trim(), NewPersonPhone.Trim(), NewPersonEmail.Trim());
+        NewPersonName = string.Empty;
+        NewPersonPhone = string.Empty;
+        NewPersonEmail = string.Empty;
+        await LoadPeople();
+    }
 
     public string RolesDisplay =>
         SelectedRoles.Any()
@@ -3977,7 +4172,7 @@ public partial class PeopleViewModel : BaseViewModel
 
 ---
 
-## FILE 72: ProjectDetailsViewModel.cs
+## FILE 73: ProjectDetailsViewModel.cs
 
 <a id='projectdetailsviewmodelcs'></a>
 
@@ -4006,6 +4201,7 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
     private readonly IServiceProvider _serviceProvider;
 
     private int _projectId;
+    private bool _isLoading;
 
     [ObservableProperty]
     private ProjectHeaderModel? _header;
@@ -4050,6 +4246,22 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
     [ObservableProperty]
     private ObservableCollection<VenueItemModel> _venues = new();
 
+    // Поиск площадок
+    [ObservableProperty]
+    private string _venueSearchText = string.Empty;
+
+    [ObservableProperty]
+    private ObservableCollection<VenuesCatalog> _venueSearchResults = new();
+
+    [ObservableProperty]
+    private decimal? _newVenueRentalCost;
+
+    [ObservableProperty]
+    private decimal? _newVenueDeposit;
+
+    [ObservableProperty]
+    private DateOnly? _newVenueEventDate;
+
     // Таймлайн
     [ObservableProperty]
     private ObservableCollection<TimelineEventItem> _timelineEvents = new();
@@ -4086,6 +4298,13 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
     [ObservableProperty]
     private string? _editStatus;
 
+    // Менеджеры для выбора
+    [ObservableProperty]
+    private ObservableCollection<User> _managers = new();
+
+    [ObservableProperty]
+    private User? _selectedManager;
+
     public override string Title => $"Проект: {Header?.ProjectNumber ?? ""}";
 
     public ProjectDetailsViewModel(
@@ -4108,34 +4327,79 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
         _serviceProvider = serviceProvider;
     }
 
-    public void OnNavigatedTo(object? parameter)
+    public async void OnNavigatedTo(object? parameter)
     {
         if (parameter is int projectId)
         {
+            // Если уже загружен этот же проект — ничего не делаем
+            if (_projectId == projectId && Header != null)
+                return;
+
+            if (_isLoading) return;
+
             _projectId = projectId;
-            _ = LoadHeaderAsync();
+            _isLoading = true;
+
+            try
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<WeddingAgencyContext>();
+                var p = await context.Projects
+                    .Include(p => p.ResponsibleManager)
+                    .Include(p => p.ProjectPeople)
+                    .FirstOrDefaultAsync(p => p.Id == projectId);
+
+                if (p != null)
+                {
+                    Header = new ProjectHeaderModel
+                    {
+                        Id = p.Id,
+                        ProjectNumber = p.ProjectNumber,
+                        WeddingDate = p.WeddingDate,
+                        Status = p.Status ?? "",
+                        BudgetTotal = p.BudgetTotal,
+                        GuestCountMin = p.GuestCountMin,
+                        LocationCity = p.LocationCity,
+                        ManagerName = p.ResponsibleManager?.FullName ?? "Не назначен",
+                        ClientCount = p.ProjectPeople.Count(pp => pp.Role == "Client"),
+                        ContractorCount = p.ProjectPeople.Count(pp => pp.Role == "Contractor"),
+                        GuestCount = p.ProjectPeople.Count(pp => pp.Role == "Guest")
+                    };
+                    OnPropertyChanged(nameof(Title));
+                }
+            }
+            finally
+            {
+                _isLoading = false;
+            }
         }
     }
-
-    private async Task LoadHeaderAsync()
-    {
-        Header = await _overviewService.GetHeaderAsync(_projectId);
-        OnPropertyChanged(nameof(Title));
-    }
-
     // ========== EDIT MODE ==========
 
     [RelayCommand]
-    private void EnableEditMode()
+    private async Task EnableEditMode()
     {
         if (Header == null) return;
 
-        EditProjectNumber = Header.ProjectNumber;
-        EditWeddingDate = Header.WeddingDate;
-        EditLocationCity = Header.LocationCity;
-        EditBudgetTotal = Header.BudgetTotal;
-        EditGuestCount = Header.GuestCountMin;
-        EditStatus = Header.Status;
+        using var scope = _serviceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<WeddingAgencyContext>();
+        var project = await context.Projects.FindAsync(_projectId);
+
+        if (project == null) return;
+
+        EditProjectNumber = project.ProjectNumber;
+        EditWeddingDate = project.WeddingDate;
+        EditLocationCity = project.LocationCity;
+        EditBudgetTotal = project.BudgetTotal;
+        EditGuestCount = project.GuestCountMin;
+        EditStatus = project.Status;
+
+        var users = await context.Users
+            .Include(u => u.Person)
+            .Where(u => u.IsActive)
+            .ToListAsync();
+        Managers = new ObservableCollection<User>(users);
+        SelectedManager = users.FirstOrDefault(u => u.Id == project.ResponsibleManagerId);
 
         IsEditMode = true;
     }
@@ -4163,10 +4427,10 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
         project.BudgetTotal = EditBudgetTotal;
         project.GuestCountMin = EditGuestCount;
         project.Status = EditStatus ?? Header.Status;
+        project.ResponsibleManagerId = SelectedManager?.PersonId;
 
         await context.SaveChangesAsync();
 
-        // Обновляем Header напрямую, без запроса к БД
         Header = new ProjectHeaderModel
         {
             Id = Header.Id,
@@ -4176,7 +4440,7 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
             BudgetTotal = project.BudgetTotal,
             GuestCountMin = project.GuestCountMin,
             LocationCity = project.LocationCity,
-            ManagerName = Header.ManagerName,
+            ManagerName = SelectedManager?.Person?.FullName ?? "Не назначен",
             ClientCount = Header.ClientCount,
             ContractorCount = Header.ContractorCount,
             GuestCount = Header.GuestCount
@@ -4185,6 +4449,7 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
 
         IsEditMode = false;
     }
+
     private WeddingAgencyContext GetContext() => _serviceProvider.GetRequiredService<WeddingAgencyContext>();
 
     // ========== КЛИЕНТЫ ==========
@@ -4222,7 +4487,7 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
         ClientSearchText = string.Empty;
         ClientSearchResults.Clear();
         await LoadClientsAsync();
-        await LoadHeaderAsync();
+        await RefreshHeaderAsync();
     }
 
     [RelayCommand]
@@ -4231,7 +4496,7 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
         if (client == null) return;
         await _peopleService.RemoveClientAsync(_projectId, client.PersonId);
         await LoadClientsAsync();
-        await LoadHeaderAsync();
+        await RefreshHeaderAsync();
     }
 
     // ========== ПОДРЯДЧИКИ ==========
@@ -4271,16 +4536,29 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
         ContractorCost = null;
         ContractorSearchResults.Clear();
         await LoadContractorsAsync();
-        await LoadHeaderAsync();
+        await RefreshHeaderAsync();
     }
-
+    [RelayCommand]
+    private async Task SaveGuestsAsync()
+    {
+        foreach (var guest in Guests)
+        {
+            await _guestsService.UpdateGuestAsync(
+                guest.Id,
+                guest.InvitationStatus,
+                guest.DietaryRestrictions,
+                guest.TransferNeeded,
+                guest.AccommodationNeeded,
+                guest.TableNumber);
+        }
+    }
     [RelayCommand]
     private async Task RemoveContractorAsync(ContractorListItem? contractor)
     {
         if (contractor == null) return;
         await _peopleService.RemoveContractorAsync(_projectId, contractor.PersonId);
         await LoadContractorsAsync();
-        await LoadHeaderAsync();
+        await RefreshHeaderAsync();
     }
 
     // ========== ГОСТИ ==========
@@ -4318,7 +4596,7 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
         GuestSearchText = string.Empty;
         GuestSearchResults.Clear();
         await LoadGuestsAsync();
-        await LoadHeaderAsync();
+        await RefreshHeaderAsync();
     }
 
     [RelayCommand]
@@ -4327,7 +4605,7 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
         if (guest == null) return;
         await _guestsService.RemoveGuestAsync(_projectId, guest.PersonId);
         await LoadGuestsAsync();
-        await LoadHeaderAsync();
+        await RefreshHeaderAsync();
     }
 
     // ========== ПЛОЩАДКА ==========
@@ -4337,6 +4615,39 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
     {
         var list = await _venueService.GetVenuesAsync(_projectId);
         Venues = new ObservableCollection<VenueItemModel>(list);
+    }
+
+    [RelayCommand]
+    private async Task SearchVenuesAsync()
+    {
+        if (string.IsNullOrWhiteSpace(VenueSearchText))
+        {
+            VenueSearchResults.Clear();
+            return;
+        }
+        var results = await _venueService.SearchVenuesAsync(VenueSearchText);
+        VenueSearchResults = new ObservableCollection<VenuesCatalog>(results);
+    }
+
+    [RelayCommand]
+    private async Task AddVenueAsync(VenuesCatalog? venue)
+    {
+        if (venue == null) return;
+        await _venueService.AddVenueAsync(_projectId, venue.Id, NewVenueRentalCost, NewVenueDeposit, NewVenueEventDate);
+        VenueSearchText = string.Empty;
+        NewVenueRentalCost = null;
+        NewVenueDeposit = null;
+        NewVenueEventDate = null;
+        VenueSearchResults.Clear();
+        await LoadVenuesAsync();
+    }
+
+    [RelayCommand]
+    private async Task RemoveVenueAsync(VenueItemModel? venue)
+    {
+        if (venue == null) return;
+        await _venueService.RemoveVenueAsync(venue.BookingId);
+        await LoadVenuesAsync();
     }
 
     // ========== ТАЙМЛАЙН ==========
@@ -4375,12 +4686,41 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
     {
         _navigation.NavigateTo<ProjectsViewModel>();
     }
+
+    private async Task RefreshHeaderAsync()
+    {
+        using var scope = _serviceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<WeddingAgencyContext>();
+        var p = await context.Projects
+            .Include(p => p.ResponsibleManager)
+            .Include(p => p.ProjectPeople)
+            .FirstOrDefaultAsync(p => p.Id == _projectId);
+
+        if (p != null && Header != null)
+        {
+            Header = new ProjectHeaderModel
+            {
+                Id = Header.Id,
+                ProjectNumber = p.ProjectNumber,
+                WeddingDate = p.WeddingDate,
+                Status = p.Status ?? "",
+                BudgetTotal = p.BudgetTotal,
+                GuestCountMin = p.GuestCountMin,
+                LocationCity = p.LocationCity,
+                ManagerName = p.ResponsibleManager?.FullName ?? "Не назначен",
+                ClientCount = p.ProjectPeople.Count(pp => pp.Role == "Client"),
+                ContractorCount = p.ProjectPeople.Count(pp => pp.Role == "Contractor"),
+                GuestCount = p.ProjectPeople.Count(pp => pp.Role == "Guest")
+            };
+            OnPropertyChanged(nameof(Title));
+        }
+    }
 }
 ```
 
 ---
 
-## FILE 73: ClientListItem.cs
+## FILE 74: ClientListItem.cs
 
 <a id='clientlistitemcs'></a>
 
@@ -4398,7 +4738,7 @@ public class ClientListItem
 
 ---
 
-## FILE 74: ContractorListItem.cs
+## FILE 75: ContractorListItem.cs
 
 <a id='contractorlistitemcs'></a>
 
@@ -4416,7 +4756,7 @@ public class ContractorListItem
 
 ---
 
-## FILE 75: FinanceSummaryModel.cs
+## FILE 76: FinanceSummaryModel.cs
 
 <a id='financesummarymodelcs'></a>
 
@@ -4437,7 +4777,7 @@ public class FinanceSummaryModel
 
 ---
 
-## FILE 76: FinanceTransactionModel.cs
+## FILE 77: FinanceTransactionModel.cs
 
 <a id='financetransactionmodelcs'></a>
 
@@ -4457,30 +4797,42 @@ public class FinanceTransactionModel
 
 ---
 
-## FILE 77: GuestListItem.cs
+## FILE 78: GuestListItem.cs
 
 <a id='guestlistitemcs'></a>
 
 ```csharp
-﻿namespace WeddingAgency.ViewModels.ProjectDetails;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 
-public class GuestListItem
+namespace WeddingAgency.ViewModels.ProjectDetails;
+
+public partial class GuestListItem : ObservableObject
 {
     public int Id { get; init; }
     public int PersonId { get; init; }
     public string FullName { get; init; } = string.Empty;
     public string? Phone { get; init; }
-    public string? InvitationStatus { get; init; }
-    public string? DietaryRestrictions { get; init; }
-    public bool TransferNeeded { get; init; }
-    public bool AccommodationNeeded { get; init; }
-    public int? TableNumber { get; init; }
+
+    [ObservableProperty]
+    private string? _invitationStatus;
+
+    [ObservableProperty]
+    private string? _dietaryRestrictions;
+
+    [ObservableProperty]
+    private bool _transferNeeded;
+
+    [ObservableProperty]
+    private bool _accommodationNeeded;
+
+    [ObservableProperty]
+    private int? _tableNumber;
 }
 ```
 
 ---
 
-## FILE 78: PersonSearchResult.cs
+## FILE 79: PersonSearchResult.cs
 
 <a id='personsearchresultcs'></a>
 
@@ -4497,7 +4849,7 @@ public class PersonSearchResult
 
 ---
 
-## FILE 79: ProjectDetailsModel.cs
+## FILE 80: ProjectDetailsModel.cs
 
 <a id='projectdetailsmodelcs'></a>
 
@@ -4519,7 +4871,7 @@ public class ProjectDetailsModel
 
 ---
 
-## FILE 80: ProjectHeaderModel.cs
+## FILE 81: ProjectHeaderModel.cs
 
 <a id='projectheadermodelcs'></a>
 
@@ -4544,7 +4896,7 @@ public class ProjectHeaderModel
 
 ---
 
-## FILE 81: TimelineEventItem.cs
+## FILE 82: TimelineEventItem.cs
 
 <a id='timelineeventitemcs'></a>
 
@@ -4565,7 +4917,7 @@ public class TimelineEventItem
 
 ---
 
-## FILE 82: VenueItemModel.cs
+## FILE 83: VenueItemModel.cs
 
 <a id='venueitemmodelcs'></a>
 
@@ -4587,7 +4939,7 @@ public class VenueItemModel
 
 ---
 
-## FILE 83: ProjectListItem.cs
+## FILE 84: ProjectListItem.cs
 
 <a id='projectlistitemcs'></a>
 
@@ -4612,7 +4964,7 @@ public partial class ProjectListItem : ObservableObject
 
 ---
 
-## FILE 84: ProjectsViewModel.cs
+## FILE 85: ProjectsViewModel.cs
 
 <a id='projectsviewmodelcs'></a>
 
@@ -4625,6 +4977,7 @@ using System.Collections.ObjectModel;
 using WeddingAgency.Models;
 using WeddingAgency.Services;
 using WeddingAgency.ViewModels.Base;
+using WeddingAgency.Views.Windows;
 
 namespace WeddingAgency.ViewModels;
 
@@ -4714,14 +5067,11 @@ public partial class ProjectsViewModel : BaseViewModel
     [RelayCommand]
     private async Task AddProject()
     {
-        await _projectService.CreateProjectAsync(
-            "PRJ-" + DateTime.Now.ToString("yyyyMMdd-HHmm"),
-            DateOnly.FromDateTime(DateTime.Now.AddMonths(3)),
-            50,
-            500000m,
-            "Москва",
-            null);
-        await LoadProjects();
+        var window = _serviceProvider.GetRequiredService<CreateProjectWindow>();
+        var result = window.ShowDialog();
+
+        if (result == true)
+            await LoadProjects();
     }
 
     [RelayCommand]
@@ -4750,7 +5100,7 @@ public partial class ProjectsViewModel : BaseViewModel
 
 ---
 
-## FILE 85: VenuesViewModel.cs
+## FILE 86: VenuesViewModel.cs
 
 <a id='venuesviewmodelcs'></a>
 
@@ -4767,7 +5117,7 @@ public partial class VenuesViewModel : BaseViewModel
 
 ---
 
-## FILE 86: ContractorsView.xaml
+## FILE 87: ContractorsView.xaml
 
 <a id='contractorsviewxaml'></a>
 
@@ -4789,7 +5139,7 @@ public partial class VenuesViewModel : BaseViewModel
 
 ---
 
-## FILE 87: ContractorsView.xaml.cs
+## FILE 88: ContractorsView.xaml.cs
 
 <a id='contractorsviewxamlcs'></a>
 
@@ -4809,7 +5159,7 @@ public partial class ContractorsView : UserControl
 
 ---
 
-## FILE 88: DashboardView.xaml
+## FILE 89: DashboardView.xaml
 
 <a id='dashboardviewxaml'></a>
 
@@ -4832,7 +5182,7 @@ public partial class ContractorsView : UserControl
 
 ---
 
-## FILE 89: DashboardView.xaml.cs
+## FILE 90: DashboardView.xaml.cs
 
 <a id='dashboardviewxamlcs'></a>
 
@@ -4852,7 +5202,7 @@ public partial class DashboardView : UserControl
 
 ---
 
-## FILE 90: FinanceView.xaml
+## FILE 91: FinanceView.xaml
 
 <a id='financeviewxaml'></a>
 
@@ -4874,7 +5224,7 @@ public partial class DashboardView : UserControl
 
 ---
 
-## FILE 91: FinanceView.xaml.cs
+## FILE 92: FinanceView.xaml.cs
 
 <a id='financeviewxamlcs'></a>
 
@@ -4894,7 +5244,7 @@ public partial class FinanceView : UserControl
 
 ---
 
-## FILE 92: PeopleView.xaml
+## FILE 93: PeopleView.xaml
 
 <a id='peopleviewxaml'></a>
 
@@ -4914,14 +5264,53 @@ public partial class FinanceView : UserControl
         </x:Array>
     </UserControl.Resources>
 
-    <Grid Margin="16">
+    <Grid Margin="20">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
+        <!-- ПАНЕЛЬ ДОБАВЛЕНИЯ -->
+        <Border Grid.Row="0"
+                Background="{DynamicResource MaterialDesignPaper}"
+                CornerRadius="6"
+                Padding="16"
+                Margin="0,0,0,16">
+            <StackPanel>
+                <TextBlock Text="Новый человек"
+                           Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
+                           Margin="0,0,0,8"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox Grid.Column="0"
+                             Text="{Binding NewPersonName, UpdateSourceTrigger=PropertyChanged}"
+                             materialDesign:HintAssist.Hint="ФИО"
+                             Margin="0,0,8,0"/>
+                    <TextBox Grid.Column="1"
+                             Text="{Binding NewPersonPhone, UpdateSourceTrigger=PropertyChanged}"
+                             materialDesign:HintAssist.Hint="Телефон"
+                             Margin="0,0,8,0"/>
+                    <TextBox Grid.Column="2"
+                             Text="{Binding NewPersonEmail, UpdateSourceTrigger=PropertyChanged}"
+                             materialDesign:HintAssist.Hint="Email"
+                             Margin="0,0,8,0"/>
+                    <Button Grid.Column="3"
+                            Content="Добавить"
+                            Command="{Binding AddPersonCommand}"
+                            Style="{StaticResource MaterialDesignRaisedButton}"/>
+                </Grid>
+            </StackPanel>
+        </Border>
+
+        <!-- ПОИСК И ФИЛЬТР -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,12">
             <TextBox materialDesign:HintAssist.Hint="Поиск по имени или телефону"
                      Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                      Width="250" Margin="0,0,12,0" />
@@ -4930,7 +5319,8 @@ public partial class FinanceView : UserControl
                       Width="140" />
         </StackPanel>
 
-        <DataGrid Grid.Row="1"
+        <!-- ТАБЛИЦА -->
+        <DataGrid Grid.Row="2"
                   ItemsSource="{Binding People}"
                   SelectedItem="{Binding SelectedPerson}"
                   AutoGenerateColumns="False"
@@ -4943,7 +5333,8 @@ public partial class FinanceView : UserControl
             </DataGrid.Columns>
         </DataGrid>
 
-        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,8,0,0">
+        <!-- КНОПКИ ДЕЙСТВИЙ -->
+        <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,8,0,0">
             <Button Content="Архивировать"
                     Command="{Binding ArchivePersonCommand}"
                     IsEnabled="{Binding SelectedPerson, Converter={StaticResource IsNotNullConverter}}"
@@ -4959,7 +5350,7 @@ public partial class FinanceView : UserControl
 
 ---
 
-## FILE 93: PeopleView.xaml.cs
+## FILE 94: PeopleView.xaml.cs
 
 <a id='peopleviewxamlcs'></a>
 
@@ -4985,7 +5376,7 @@ public partial class PeopleView : UserControl
 
 ---
 
-## FILE 94: ProjectDetailsView.xaml
+## FILE 95: ProjectDetailsView.xaml
 
 <a id='projectdetailsviewxaml'></a>
 
@@ -4995,96 +5386,210 @@ public partial class PeopleView : UserControl
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
 
-    <Grid Margin="16">
+    <Grid Margin="20">
+
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <Button Grid.Row="0" Content="← Назад" Command="{Binding GoBackCommand}"
+        <!-- BACK -->
+        <Button Grid.Row="0"
+                Content="← Назад"
+                Command="{Binding GoBackCommand}"
                 Style="{StaticResource MaterialDesignFlatButton}"
-                HorizontalAlignment="Left" Margin="0,0,0,8" />
+                HorizontalAlignment="Left"
+                Margin="0,0,0,12"/>
 
-        <!-- Header -->
-        <Border Grid.Row="1" Background="{DynamicResource MaterialDesignPaper}" Padding="16" CornerRadius="4" Margin="0,0,0,12">
+        <!-- ========================= -->
+        <!-- VIEW HEADER -->
+        <!-- ========================= -->
+
+        <Border Grid.Row="1"
+                Background="{DynamicResource MaterialDesignPaper}"
+                CornerRadius="6"
+                Padding="24"
+                Margin="0,0,0,12"
+                Visibility="{Binding IsEditMode, Converter={StaticResource InvertBoolConverter}}">
+
             <Grid>
+
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <!-- Заголовок и кнопки -->
-                <StackPanel Orientation="Horizontal">
-                    <!-- View mode -->
-                    <TextBlock Text="{Binding Header.ProjectNumber}" 
-                               Style="{StaticResource MaterialDesignHeadline5TextBlock}"
-                               Visibility="{Binding IsEditMode, Converter={StaticResource InvertBoolConverter}}" />
-                    <!-- Edit mode -->
-                    <TextBox Text="{Binding EditProjectNumber}" 
-                             FontSize="24" FontWeight="SemiBold"
-                             Visibility="{Binding IsEditMode, Converter={StaticResource BoolToVisibilityConverter}}"
-                             Width="200" Margin="0,0,8,0" />
+                <!-- TOP -->
+                <Grid Grid.Row="0">
 
-                    <Button Content="Редактировать" 
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Text="{Binding Header.ProjectNumber}"
+                               FontSize="34"
+                               FontWeight="Bold"
+                               VerticalAlignment="Center"/>
+
+                    <Button Grid.Column="1"
+                            Content="Редактировать"
                             Command="{Binding EnableEditModeCommand}"
-                            Visibility="{Binding IsEditMode, Converter={StaticResource InvertBoolConverter}}"
-                            Style="{StaticResource MaterialDesignFlatButton}"
-                            VerticalAlignment="Center" Margin="16,0,0,0" />
-                    <Button Content="Сохранить" 
-                            Command="{Binding SaveEditCommand}"
-                            Visibility="{Binding IsEditMode, Converter={StaticResource BoolToVisibilityConverter}}"
-                            Style="{StaticResource MaterialDesignRaisedButton}"
-                            VerticalAlignment="Center" Margin="0,0,4,0" />
-                    <Button Content="Отмена" 
-                            Command="{Binding CancelEditCommand}"
-                            Visibility="{Binding IsEditMode, Converter={StaticResource BoolToVisibilityConverter}}"
-                            Style="{StaticResource MaterialDesignFlatButton}"
-                            VerticalAlignment="Center" />
+                            Style="{StaticResource MaterialDesignRaisedButton}"/>
+
+                </Grid>
+
+                <!-- INFO -->
+                <UniformGrid Grid.Row="1"
+                             Columns="5"
+                             Margin="0,24,0,0">
+
+                    <StackPanel>
+                        <TextBlock Text="Статус"
+                                   Foreground="Gray"
+                                   FontSize="12"/>
+                        <TextBlock Text="{Binding Header.Status}"
+                                   FontWeight="SemiBold"/>
+                    </StackPanel>
+
+                    <StackPanel>
+                        <TextBlock Text="Дата"
+                                   Foreground="Gray"
+                                   FontSize="12"/>
+                        <TextBlock Text="{Binding Header.WeddingDate, StringFormat={}{0:dd.MM.yyyy}}"
+                                   FontWeight="SemiBold"/>
+                    </StackPanel>
+
+                    <StackPanel>
+                        <TextBlock Text="Город"
+                                   Foreground="Gray"
+                                   FontSize="12"/>
+                        <TextBlock Text="{Binding Header.LocationCity}"
+                                   FontWeight="SemiBold"/>
+                    </StackPanel>
+
+                    <StackPanel>
+                        <TextBlock Text="Бюджет"
+                                   Foreground="Gray"
+                                   FontSize="12"/>
+                        <TextBlock Text="{Binding Header.BudgetTotal, StringFormat={}{0:N0} ₽}"
+                                   FontWeight="SemiBold"/>
+                    </StackPanel>
+
+                    <StackPanel>
+                        <TextBlock Text="Менеджер"
+                                   Foreground="Gray"
+                                   FontSize="12"/>
+                        <TextBlock Text="{Binding Header.ManagerName}"
+                                   FontWeight="SemiBold"/>
+                    </StackPanel>
+
+                </UniformGrid>
+
+                <!-- COUNTERS -->
+                <StackPanel Grid.Row="2"
+                            Orientation="Horizontal"
+                            Margin="0,24,0,0">
+
+                    <TextBlock Text="{Binding Header.ClientCount, StringFormat=Клиентов: {0}}"
+                               FontWeight="Bold"
+                               Margin="0,0,24,0"/>
+
+                    <TextBlock Text="{Binding Header.ContractorCount, StringFormat=Подрядчиков: {0}}"
+                               FontWeight="Bold"
+                               Margin="0,0,24,0"/>
+
+                    <TextBlock Text="{Binding Header.GuestCount, StringFormat=Гостей: {0}}"
+                               FontWeight="Bold"/>
+
                 </StackPanel>
 
-                <!-- Строка статуса и дат -->
-                <WrapPanel Grid.Row="1" Margin="0,8,0,0">
-                    <!-- View mode -->
-                    <TextBlock Text="{Binding Header.Status, StringFormat='Статус: {0}'}" Margin="0,0,16,0"
-                               Foreground="{Binding Header.Status, Converter={StaticResource StatusToColorConverter}}"
-                               Visibility="{Binding IsEditMode, Converter={StaticResource InvertBoolConverter}}" />
-                    <TextBlock Text="{Binding Header.WeddingDate, StringFormat='Дата: {0:dd.MM.yyyy}'}" Margin="0,0,16,0"
-                               Visibility="{Binding IsEditMode, Converter={StaticResource InvertBoolConverter}}" />
-                    <TextBlock Text="{Binding Header.LocationCity, StringFormat='Город: {0}'}" Margin="0,0,16,0"
-                               Visibility="{Binding IsEditMode, Converter={StaticResource InvertBoolConverter}}" />
-                    <TextBlock Text="{Binding Header.BudgetTotal, StringFormat='Бюджет: {0:N0} ₽'}" Margin="0,0,16,0"
-                               Visibility="{Binding IsEditMode, Converter={StaticResource InvertBoolConverter}}" />
-                    <TextBlock Text="{Binding Header.ManagerName, StringFormat='Менеджер: {0}'}"
-                               Visibility="{Binding IsEditMode, Converter={StaticResource InvertBoolConverter}}" />
+            </Grid>
 
-                    <!-- Edit mode -->
-                    <ComboBox Text="{Binding EditStatus}" Width="130" Margin="0,0,8,0"
-                              Visibility="{Binding IsEditMode, Converter={StaticResource BoolToVisibilityConverter}}">
+        </Border>
+
+        <!-- ========================= -->
+        <!-- EDIT HEADER -->
+        <!-- ========================= -->
+
+        <Border Grid.Row="1"
+                Background="{DynamicResource MaterialDesignPaper}"
+                CornerRadius="6"
+                Padding="24"
+                Margin="0,0,0,12"
+                Visibility="{Binding IsEditMode, Converter={StaticResource BoolToVisibilityConverter}}">
+
+            <Grid>
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- TOP -->
+                <Grid Grid.Row="0">
+
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBox Text="{Binding EditProjectNumber}"
+                             FontSize="34"
+                             FontWeight="Bold"
+                             Width="420"/>
+
+                    <StackPanel Grid.Column="1"
+                                Orientation="Horizontal">
+
+                        <Button Content="Сохранить"
+                                Command="{Binding SaveEditCommand}"
+                                Style="{StaticResource MaterialDesignRaisedButton}"
+                                Margin="0,0,8,0"/>
+
+                        <Button Content="Отмена"
+                                Command="{Binding CancelEditCommand}"
+                                Style="{StaticResource MaterialDesignFlatButton}"/>
+
+                    </StackPanel>
+
+                </Grid>
+
+                <!-- INFO -->
+                <UniformGrid Grid.Row="1"
+                             Columns="5"
+                             Margin="0,24,0,0">
+
+                    <ComboBox Text="{Binding EditStatus}">
                         <ComboBoxItem>Новый</ComboBoxItem>
                         <ComboBoxItem>Открыт</ComboBoxItem>
                         <ComboBoxItem>Закрыт</ComboBoxItem>
                     </ComboBox>
-                    <TextBox Text="{Binding EditWeddingDate, StringFormat='{}{0:yyyy-MM-dd}'}" Width="120" Margin="0,0,8,0"
-                             Visibility="{Binding IsEditMode, Converter={StaticResource BoolToVisibilityConverter}}" />
-                    <TextBox Text="{Binding EditLocationCity}" Width="120" Margin="0,0,8,0"
-                             Visibility="{Binding IsEditMode, Converter={StaticResource BoolToVisibilityConverter}}" />
-                    <TextBox Text="{Binding EditBudgetTotal}" Width="120" Margin="0,0,8,0"
-                             Visibility="{Binding IsEditMode, Converter={StaticResource BoolToVisibilityConverter}}" />
-                </WrapPanel>
 
-                <!-- Счётчики -->
-                <WrapPanel Grid.Row="2" Margin="0,4,0,0">
-                    <TextBlock Text="{Binding Header.ClientCount, StringFormat='Клиентов: {0}'}" Margin="0,0,16,0" FontWeight="Bold" />
-                    <TextBlock Text="{Binding Header.ContractorCount, StringFormat='Подрядчиков: {0}'}" Margin="0,0,16,0" FontWeight="Bold" />
-                    <TextBlock Text="{Binding Header.GuestCount, StringFormat='Гостей: {0}'}" FontWeight="Bold" />
-                </WrapPanel>
+                    <DatePicker SelectedDate="{Binding EditWeddingDate}"/>
+
+                    <TextBox Text="{Binding EditLocationCity}"
+                             materialDesign:HintAssist.Hint="Город"/>
+
+                    <TextBox Text="{Binding EditBudgetTotal}"
+                             materialDesign:HintAssist.Hint="Бюджет"/>
+
+                    <ComboBox ItemsSource="{Binding Managers}"
+                              SelectedItem="{Binding SelectedManager}"
+                              DisplayMemberPath="Person.FullName"/>
+
+                </UniformGrid>
+
             </Grid>
+
         </Border>
 
-        <!-- Вкладки -->
+        <!-- TABS -->
         <TabControl Grid.Row="2">
+
             <!-- КЛИЕНТЫ -->
             <TabItem Header="Клиенты" PreviewMouseLeftButtonDown="OnClientsTabSelected">
                 <Grid Margin="12">
@@ -5096,20 +5601,28 @@ public partial class PeopleView : UserControl
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                         <TextBox materialDesign:HintAssist.Hint="Поиск человека по имени или телефону"
                                  Text="{Binding ClientSearchText, UpdateSourceTrigger=PropertyChanged}"
-                                 Width="250" Margin="0,0,8,0"
+                                 Width="250"
+                                 Margin="0,0,8,0"
                                  KeyDown="OnClientSearchKeyDown" />
-                        <Button Content="Найти" Command="{Binding SearchClientsCommand}"
+
+                        <Button Content="Найти"
+                                Command="{Binding SearchClientsCommand}"
                                 Style="{StaticResource MaterialDesignFlatButton}" />
                     </StackPanel>
 
-                    <ListBox Grid.Row="0" ItemsSource="{Binding ClientSearchResults}"
+                    <ListBox Grid.Row="0"
+                             ItemsSource="{Binding ClientSearchResults}"
                              Visibility="{Binding ClientSearchResults.Count, Converter={StaticResource BoolToVisibilityConverter}}"
-                             MaxHeight="120" Margin="0,0,0,8">
+                             MaxHeight="120"
+                             Margin="0,0,0,8">
+
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <Grid>
                                     <TextBlock Text="{Binding FullName}" />
-                                    <Button Content="Добавить" HorizontalAlignment="Right"
+
+                                    <Button Content="Добавить"
+                                            HorizontalAlignment="Right"
                                             Command="{Binding DataContext.AddClientCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
                                             CommandParameter="{Binding}" />
                                 </Grid>
@@ -5117,21 +5630,41 @@ public partial class PeopleView : UserControl
                         </ListBox.ItemTemplate>
                     </ListBox>
 
-                    <DataGrid Grid.Row="1" ItemsSource="{Binding Clients}" AutoGenerateColumns="False" IsReadOnly="True"
+                    <DataGrid Grid.Row="1"
+                              ItemsSource="{Binding Clients}"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
                               ColumnWidth="*">
+
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="ФИО" Binding="{Binding FullName}" Width="*" />
-                            <DataGridTextColumn Header="Телефон" Binding="{Binding Phone}" Width="140" />
-                            <DataGridTextColumn Header="Email" Binding="{Binding Email}" Width="180" />
-                            <DataGridTemplateColumn Header="" Width="60">
+
+                            <DataGridTextColumn Header="ФИО"
+                                                Binding="{Binding FullName}"
+                                                Width="*" />
+
+                            <DataGridTextColumn Header="Телефон"
+                                                Binding="{Binding Phone}"
+                                                Width="140" />
+
+                            <DataGridTextColumn Header="Email"
+                                                Binding="{Binding Email}"
+                                                Width="180" />
+
+                            <DataGridTemplateColumn Header=""
+                                                    Width="60">
+
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Button Content="✕" Width="40" Height="24"
+                                        <Button Content="✕"
+                                                Width="40"
+                                                Height="24"
                                                 Command="{Binding DataContext.RemoveClientCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                 CommandParameter="{Binding}" />
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
+
                             </DataGridTemplateColumn>
+
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
@@ -5140,34 +5673,49 @@ public partial class PeopleView : UserControl
             <!-- ПОДРЯДЧИКИ -->
             <TabItem Header="Подрядчики" PreviewMouseLeftButtonDown="OnContractorsTabSelected">
                 <Grid Margin="12">
+
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <StackPanel Orientation="Horizontal"
+                                Margin="0,0,0,8">
+
                         <TextBox materialDesign:HintAssist.Hint="Поиск человека"
                                  Text="{Binding ContractorSearchText, UpdateSourceTrigger=PropertyChanged}"
-                                 Width="180" Margin="0,0,6,0"
+                                 Width="180"
+                                 Margin="0,0,6,0"
                                  KeyDown="OnContractorSearchKeyDown" />
+
                         <TextBox materialDesign:HintAssist.Hint="Услуга"
                                  Text="{Binding ContractorService, UpdateSourceTrigger=PropertyChanged}"
-                                 Width="100" Margin="0,0,6,0" />
+                                 Width="100"
+                                 Margin="0,0,6,0" />
+
                         <TextBox materialDesign:HintAssist.Hint="Стоимость"
                                  Text="{Binding ContractorCost, UpdateSourceTrigger=PropertyChanged}"
-                                 Width="90" Margin="0,0,6,0" />
-                        <Button Content="Найти" Command="{Binding SearchContractorsCommand}"
+                                 Width="90"
+                                 Margin="0,0,6,0" />
+
+                        <Button Content="Найти"
+                                Command="{Binding SearchContractorsCommand}"
                                 Style="{StaticResource MaterialDesignFlatButton}" />
                     </StackPanel>
 
-                    <ListBox Grid.Row="0" ItemsSource="{Binding ContractorSearchResults}"
+                    <ListBox Grid.Row="0"
+                             ItemsSource="{Binding ContractorSearchResults}"
                              Visibility="{Binding ContractorSearchResults.Count, Converter={StaticResource BoolToVisibilityConverter}}"
-                             MaxHeight="120" Margin="0,0,0,8">
+                             MaxHeight="120"
+                             Margin="0,0,0,8">
+
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <Grid>
                                     <TextBlock Text="{Binding FullName}" />
-                                    <Button Content="Добавить" HorizontalAlignment="Right"
+
+                                    <Button Content="Добавить"
+                                            HorizontalAlignment="Right"
                                             Command="{Binding DataContext.AddContractorCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
                                             CommandParameter="{Binding}" />
                                 </Grid>
@@ -5175,86 +5723,157 @@ public partial class PeopleView : UserControl
                         </ListBox.ItemTemplate>
                     </ListBox>
 
-                    <DataGrid Grid.Row="1" ItemsSource="{Binding Contractors}" AutoGenerateColumns="False" IsReadOnly="True"
+                    <DataGrid Grid.Row="1"
+                              ItemsSource="{Binding Contractors}"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
                               ColumnWidth="*">
+
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="ФИО" Binding="{Binding FullName}" Width="*" />
-                            <DataGridTextColumn Header="Услуга" Binding="{Binding Service}" Width="160" />
-                            <DataGridTextColumn Header="Стоимость" Binding="{Binding Cost, StringFormat='{}{0:N0} ₽'}" Width="120" />
-                            <DataGridTemplateColumn Header="" Width="60">
+
+                            <DataGridTextColumn Header="ФИО"
+                                                Binding="{Binding FullName}"
+                                                Width="*" />
+
+                            <DataGridTextColumn Header="Услуга"
+                                                Binding="{Binding Service}"
+                                                Width="160" />
+
+                            <DataGridTextColumn Header="Стоимость"
+                                                Binding="{Binding Cost, StringFormat='{}{0:N0} ₽'}"
+                                                Width="120" />
+
+                            <DataGridTemplateColumn Header=""
+                                                    Width="60">
+
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Button Content="✕" Width="40" Height="24"
+                                        <Button Content="✕"
+                                                Width="40"
+                                                Height="24"
                                                 Command="{Binding DataContext.RemoveContractorCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                 CommandParameter="{Binding}" />
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
+
                             </DataGridTemplateColumn>
+
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
             </TabItem>
 
+            
+            <!-- ГОСТИ -->
             <!-- ГОСТИ -->
             <TabItem Header="Гости" PreviewMouseLeftButtonDown="OnGuestsTabSelected">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                         <TextBox materialDesign:HintAssist.Hint="Поиск человека"
-                                 Text="{Binding GuestSearchText, UpdateSourceTrigger=PropertyChanged}"
-                                 Width="250" Margin="0,0,8,0"
-                                 KeyDown="OnGuestSearchKeyDown" />
+                     Text="{Binding GuestSearchText, UpdateSourceTrigger=PropertyChanged}"
+                     Width="250" Margin="0,0,8,0"
+                     KeyDown="OnGuestSearchKeyDown" />
                         <Button Content="Найти" Command="{Binding SearchGuestsCommand}"
-                                Style="{StaticResource MaterialDesignFlatButton}" />
+                    Style="{StaticResource MaterialDesignFlatButton}" />
                     </StackPanel>
 
                     <ListBox Grid.Row="0" ItemsSource="{Binding GuestSearchResults}"
-                             Visibility="{Binding GuestSearchResults.Count, Converter={StaticResource BoolToVisibilityConverter}}"
-                             MaxHeight="120" Margin="0,0,0,8">
+                 Visibility="{Binding GuestSearchResults.Count, Converter={StaticResource BoolToVisibilityConverter}}"
+                 MaxHeight="120" Margin="0,0,0,8">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <Grid>
                                     <TextBlock Text="{Binding FullName}" />
                                     <Button Content="Добавить" HorizontalAlignment="Right"
-                                            Command="{Binding DataContext.AddGuestCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
-                                            CommandParameter="{Binding}" />
+                                Command="{Binding DataContext.AddGuestCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                CommandParameter="{Binding}" />
                                 </Grid>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
 
-                    <DataGrid Grid.Row="1" ItemsSource="{Binding Guests}" AutoGenerateColumns="False" IsReadOnly="True"
-                              ColumnWidth="*">
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding Guests}" AutoGenerateColumns="False"
+                  ColumnWidth="*">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="ФИО" Binding="{Binding FullName}" Width="*" />
-                            <DataGridTextColumn Header="Телефон" Binding="{Binding Phone}" Width="120" />
-                            <DataGridTextColumn Header="Приглашение" Binding="{Binding InvitationStatus}" Width="110" />
-                            <DataGridTextColumn Header="Диета" Binding="{Binding DietaryRestrictions}" Width="120" />
-                            <DataGridCheckBoxColumn Header="Трансфер" Binding="{Binding TransferNeeded}" Width="70" />
-                            <DataGridCheckBoxColumn Header="Проживание" Binding="{Binding AccommodationNeeded}" Width="80" />
-                            <DataGridTextColumn Header="Стол" Binding="{Binding TableNumber}" Width="50" />
+                            <DataGridTextColumn Header="ФИО" Binding="{Binding FullName}" Width="*" IsReadOnly="True" />
+                            <DataGridTextColumn Header="Телефон" Binding="{Binding Phone}" Width="120" IsReadOnly="True" />
+                            <DataGridTextColumn Header="Приглашение" Binding="{Binding InvitationStatus, UpdateSourceTrigger=PropertyChanged}" Width="110" />
+                            <DataGridTextColumn Header="Диета" Binding="{Binding DietaryRestrictions, UpdateSourceTrigger=PropertyChanged}" Width="120" />
+                            <DataGridCheckBoxColumn Header="Трансфер" Binding="{Binding TransferNeeded, UpdateSourceTrigger=PropertyChanged}" Width="70" />
+                            <DataGridCheckBoxColumn Header="Проживание" Binding="{Binding AccommodationNeeded, UpdateSourceTrigger=PropertyChanged}" Width="80" />
+                            <DataGridTextColumn Header="Стол" Binding="{Binding TableNumber, UpdateSourceTrigger=PropertyChanged}" Width="60" />
                             <DataGridTemplateColumn Header="" Width="60">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <Button Content="✕" Width="40" Height="24"
-                                                Command="{Binding DataContext.RemoveGuestCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                CommandParameter="{Binding}" />
+                                    Command="{Binding DataContext.RemoveGuestCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                    CommandParameter="{Binding}" />
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>
+
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,8,0,0">
+                        <Button Content="Сохранить изменения"
+        Command="{Binding SaveGuestsCommand}"
+        Style="{StaticResource MaterialDesignRaisedButton}" />
+                    </StackPanel>
                 </Grid>
             </TabItem>
 
             <!-- ПЛОЩАДКА -->
             <TabItem Header="Площадка" PreviewMouseLeftButtonDown="OnVenuesTabSelected">
                 <Grid Margin="12">
-                    <DataGrid ItemsSource="{Binding Venues}" AutoGenerateColumns="False" IsReadOnly="True"
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Поиск и добавление -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBox materialDesign:HintAssist.Hint="Поиск площадки"
+                                 Text="{Binding VenueSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                 Width="200" Margin="0,0,8,0"
+                                 KeyDown="OnVenueSearchKeyDown" />
+                        <TextBox materialDesign:HintAssist.Hint="Аренда"
+                                 Text="{Binding NewVenueRentalCost, UpdateSourceTrigger=PropertyChanged}"
+                                 Width="100" Margin="0,0,6,0" />
+                        <TextBox materialDesign:HintAssist.Hint="Депозит"
+                                 Text="{Binding NewVenueDeposit, UpdateSourceTrigger=PropertyChanged}"
+                                 Width="100" Margin="0,0,6,0" />
+                        <DatePicker SelectedDate="{Binding NewVenueEventDate}" Width="120" Margin="0,0,6,0" />
+                        <Button Content="Найти" Command="{Binding SearchVenuesCommand}"
+                                Style="{StaticResource MaterialDesignFlatButton}" />
+                    </StackPanel>
+
+                    <!-- Результаты поиска -->
+                    <ListBox Grid.Row="0" ItemsSource="{Binding VenueSearchResults}"
+                             Visibility="{Binding VenueSearchResults.Count, Converter={StaticResource BoolToVisibilityConverter}}"
+                             MaxHeight="120" Margin="0,0,0,8">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Name}" FontWeight="Bold" />
+                                        <TextBlock Text="{Binding City}" />
+                                    </StackPanel>
+                                    <Button Content="Добавить" HorizontalAlignment="Right"
+                                            Command="{Binding DataContext.AddVenueCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                            CommandParameter="{Binding}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                    <!-- Список площадок -->
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding Venues}" AutoGenerateColumns="False" IsReadOnly="True"
                               ColumnWidth="*">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Название" Binding="{Binding VenueName}" Width="*" />
@@ -5264,6 +5883,15 @@ public partial class PeopleView : UserControl
                             <DataGridTextColumn Header="Депозит" Binding="{Binding DepositAmount, StringFormat='{}{0:N0} ₽'}" Width="110" />
                             <DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="100" />
                             <DataGridTextColumn Header="Дата" Binding="{Binding EventDate, StringFormat='{}{0:dd.MM.yyyy}'}" Width="100" />
+                            <DataGridTemplateColumn Header="" Width="60">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Content="✕" Width="40" Height="24"
+                                                Command="{Binding DataContext.RemoveVenueCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
@@ -5272,15 +5900,38 @@ public partial class PeopleView : UserControl
             <!-- ТАЙМЛАЙН -->
             <TabItem Header="Таймлайн" PreviewMouseLeftButtonDown="OnTimelineTabSelected">
                 <Grid Margin="12">
-                    <DataGrid ItemsSource="{Binding TimelineEvents}" AutoGenerateColumns="False" IsReadOnly="True"
+
+                    <DataGrid ItemsSource="{Binding TimelineEvents}"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
                               ColumnWidth="*">
+
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Начало" Binding="{Binding StartTime, StringFormat='{}{0:HH:mm}'}" Width="70" />
-                            <DataGridTextColumn Header="Конец" Binding="{Binding EndTime, StringFormat='{}{0:HH:mm}'}" Width="70" />
-                            <DataGridTextColumn Header="Описание" Binding="{Binding Description}" Width="*" />
-                            <DataGridTextColumn Header="Локация" Binding="{Binding Location}" Width="140" />
-                            <DataGridTextColumn Header="Ответственный" Binding="{Binding ResponsiblePerson}" Width="140" />
-                            <DataGridTextColumn Header="Заметки" Binding="{Binding Notes}" Width="160" />
+
+                            <DataGridTextColumn Header="Начало"
+                                                Binding="{Binding StartTime, StringFormat='{}{0:HH:mm}'}"
+                                                Width="70" />
+
+                            <DataGridTextColumn Header="Конец"
+                                                Binding="{Binding EndTime, StringFormat='{}{0:HH:mm}'}"
+                                                Width="70" />
+
+                            <DataGridTextColumn Header="Описание"
+                                                Binding="{Binding Description}"
+                                                Width="*" />
+
+                            <DataGridTextColumn Header="Локация"
+                                                Binding="{Binding Location}"
+                                                Width="140" />
+
+                            <DataGridTextColumn Header="Ответственный"
+                                                Binding="{Binding ResponsiblePerson}"
+                                                Width="140" />
+
+                            <DataGridTextColumn Header="Заметки"
+                                                Binding="{Binding Notes}"
+                                                Width="160" />
+
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
@@ -5289,43 +5940,87 @@ public partial class PeopleView : UserControl
             <!-- ФИНАНСЫ -->
             <TabItem Header="Финансы" PreviewMouseLeftButtonDown="OnFinanceTabSelected">
                 <Grid Margin="12">
+
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
-                    <Border Background="{DynamicResource MaterialDesignPaper}" Padding="12" CornerRadius="4" Margin="0,0,0,12">
+                    <Border Background="{DynamicResource MaterialDesignPaper}"
+                            Padding="12"
+                            CornerRadius="4"
+                            Margin="0,0,0,12">
+
                         <WrapPanel>
-                            <TextBlock Text="{Binding FinanceSummary.BudgetTotal, StringFormat='Бюджет: {0:N0} ₽'}" Margin="0,0,20,0" FontWeight="Bold" />
-                            <TextBlock Text="{Binding FinanceSummary.PaidByClient, StringFormat='Оплачено клиентом: {0:N0} ₽'}" Margin="0,0,20,0" />
-                            <TextBlock Text="{Binding FinanceSummary.TotalActual, StringFormat='Расходы: {0:N0} ₽'}" Margin="0,0,20,0" />
-                            <TextBlock Text="{Binding FinanceSummary.Remainder, StringFormat='Остаток: {0:N0} ₽'}" Margin="0,0,20,0" Foreground="Green" />
-                            <TextBlock Text="{Binding FinanceSummary.Profit, StringFormat='Прибыль: {0:N0} ₽'}" FontWeight="Bold" Foreground="DarkGreen" />
+
+                            <TextBlock Text="{Binding FinanceSummary.BudgetTotal, StringFormat='Бюджет: {0:N0} ₽'}"
+                                       Margin="0,0,20,0"
+                                       FontWeight="Bold" />
+
+                            <TextBlock Text="{Binding FinanceSummary.PaidByClient, StringFormat='Оплачено клиентом: {0:N0} ₽'}"
+                                       Margin="0,0,20,0" />
+
+                            <TextBlock Text="{Binding FinanceSummary.TotalActual, StringFormat='Расходы: {0:N0} ₽'}"
+                                       Margin="0,0,20,0" />
+
+                            <TextBlock Text="{Binding FinanceSummary.Remainder, StringFormat='Остаток: {0:N0} ₽'}"
+                                       Margin="0,0,20,0"
+                                       Foreground="Green" />
+
+                            <TextBlock Text="{Binding FinanceSummary.Profit, StringFormat='Прибыль: {0:N0} ₽'}"
+                                       FontWeight="Bold"
+                                       Foreground="DarkGreen" />
+
                         </WrapPanel>
                     </Border>
 
-                    <DataGrid Grid.Row="1" ItemsSource="{Binding FinanceTransactions}" AutoGenerateColumns="False" IsReadOnly="True"
+                    <DataGrid Grid.Row="1"
+                              ItemsSource="{Binding FinanceTransactions}"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
                               ColumnWidth="*">
+
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Тип" Binding="{Binding Type}" Width="140" />
-                            <DataGridTextColumn Header="Номер" Binding="{Binding Number}" Width="120" />
-                            <DataGridTextColumn Header="Контрагент" Binding="{Binding Counterparty}" Width="*" />
-                            <DataGridTextColumn Header="Сумма" Binding="{Binding Amount, StringFormat='{}{0:N0} ₽'}" Width="120" />
-                            <DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="100" />
-                            <DataGridTextColumn Header="Дата" Binding="{Binding Date, StringFormat='{}{0:dd.MM.yyyy}'}" Width="100" />
+
+                            <DataGridTextColumn Header="Тип"
+                                                Binding="{Binding Type}"
+                                                Width="140" />
+
+                            <DataGridTextColumn Header="Номер"
+                                                Binding="{Binding Number}"
+                                                Width="120" />
+
+                            <DataGridTextColumn Header="Контрагент"
+                                                Binding="{Binding Counterparty}"
+                                                Width="*" />
+
+                            <DataGridTextColumn Header="Сумма"
+                                                Binding="{Binding Amount, StringFormat='{}{0:N0} ₽'}"
+                                                Width="120" />
+
+                            <DataGridTextColumn Header="Статус"
+                                                Binding="{Binding Status}"
+                                                Width="100" />
+
+                            <DataGridTextColumn Header="Дата"
+                                                Binding="{Binding Date, StringFormat='{}{0:dd.MM.yyyy}'}"
+                                                Width="100" />
+
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
             </TabItem>
 
         </TabControl>
+
     </Grid>
+
 </UserControl>
 ```
 
 ---
 
-## FILE 95: ProjectDetailsView.xaml.cs
+## FILE 96: ProjectDetailsView.xaml.cs
 
 <a id='projectdetailsviewxamlcs'></a>
 
@@ -5394,12 +6089,18 @@ public partial class ProjectDetailsView : UserControl
         if (DataContext is ProjectDetailsViewModel vm)
             vm.LoadTimelineCommand.Execute(null);
     }
+
+    private void OnVenueSearchKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter && DataContext is ProjectDetailsViewModel vm)
+            vm.SearchVenuesCommand.Execute(null);
+    }
 }
 ```
 
 ---
 
-## FILE 96: ProjectsView.xaml
+## FILE 97: ProjectsView.xaml
 
 <a id='projectsviewxaml'></a>
 
@@ -5410,65 +6111,121 @@ public partial class ProjectDetailsView : UserControl
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
 
     <UserControl.Resources>
+
         <Style x:Key="StatusCell" TargetType="DataGridCell">
-            <Setter Property="Foreground" Value="{Binding Status, Converter={StaticResource StatusToColorConverter}}" />
-            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground"
+                    Value="{Binding Status, Converter={StaticResource StatusToColorConverter}}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
         </Style>
+
     </UserControl.Resources>
 
-    <Grid Margin="16">
+    <Grid Margin="20">
+
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
-            <TextBox materialDesign:HintAssist.Hint="Поиск по номеру или городу"
-                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                     Width="250" Margin="0,0,12,0" />
-            <Button Content="Добавить"
+        <!-- TOP BAR -->
+        <DockPanel Grid.Row="0"
+                   Margin="0,0,0,16">
+
+            <Button DockPanel.Dock="Right"
+                    Content="Добавить"
                     Command="{Binding AddProjectCommand}"
-                    Style="{StaticResource MaterialDesignRaisedButton}" />
-        </StackPanel>
+                    Style="{StaticResource MaterialDesignRaisedButton}"
+                    Padding="18,8"/>
 
-        <DataGrid Grid.Row="1"
-                  ItemsSource="{Binding Projects}"
-                  SelectedItem="{Binding SelectedProject}"
-                  AutoGenerateColumns="False"
-                  IsReadOnly="True"
-                  SelectionMode="Single"
-                  MouseDoubleClick="DataGrid_MouseDoubleClick">
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="Номер" Binding="{Binding ProjectNumber}" Width="120" />
-                <DataGridTextColumn Header="Дата" Binding="{Binding WeddingDate, StringFormat='{}{0:dd.MM.yyyy}'}" Width="100" />
-                <DataGridTextColumn Header="Город" Binding="{Binding LocationCity}" Width="120" />
-                <DataGridTextColumn Header="Бюджет" Binding="{Binding BudgetTotal, StringFormat='{}{0:N0} ₽'}" Width="120" />
-                <DataGridTextColumn Header="Гостей" Binding="{Binding GuestCountMin}" Width="80" />
-                <DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="100" CellStyle="{StaticResource StatusCell}" />
-                <DataGridTextColumn Header="Менеджер" Binding="{Binding ManagerName}" Width="150" />
-                <DataGridTextColumn Header="Клиенты" Binding="{Binding ClientsDisplay}" Width="*" />
-            </DataGrid.Columns>
-        </DataGrid>
+            <TextBox Width="280"
+                     Margin="0,0,12,0"
+                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                     materialDesign:HintAssist.Hint="Поиск по номеру или городу"/>
+        </DockPanel>
 
-        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,8,0,0">
+        <!-- TABLE -->
+        <Border Grid.Row="1"
+                Background="{DynamicResource MaterialDesignPaper}"
+                CornerRadius="6"
+                Padding="8">
+
+            <DataGrid ItemsSource="{Binding Projects}"
+                      SelectedItem="{Binding SelectedProject}"
+                      AutoGenerateColumns="False"
+                      IsReadOnly="True"
+                      SelectionMode="Single"
+                      HeadersVisibility="Column"
+                      GridLinesVisibility="Horizontal"
+                      BorderThickness="0">
+
+                <DataGrid.Columns>
+
+                    <DataGridTextColumn Header="Номер"
+                                        Binding="{Binding ProjectNumber}"
+                                        Width="160"/>
+
+                    <DataGridTextColumn Header="Дата"
+                                        Binding="{Binding WeddingDate, StringFormat='{}{0:dd.MM.yyyy}'}"
+                                        Width="120"/>
+
+                    <DataGridTextColumn Header="Город"
+                                        Binding="{Binding LocationCity}"
+                                        Width="140"/>
+
+                    <DataGridTextColumn Header="Бюджет"
+                                        Binding="{Binding BudgetTotal, StringFormat='{}{0:N0} ₽'}"
+                                        Width="140"/>
+
+                    <DataGridTextColumn Header="Гостей"
+                                        Binding="{Binding GuestCountMin}"
+                                        Width="90"/>
+
+                    <DataGridTextColumn Header="Статус"
+                                        Binding="{Binding Status}"
+                                        Width="120"
+                                        CellStyle="{StaticResource StatusCell}"/>
+
+                    <DataGridTextColumn Header="Менеджер"
+                                        Binding="{Binding ManagerName}"
+                                        Width="180"/>
+
+                    <DataGridTextColumn Header="Клиенты"
+                                        Binding="{Binding ClientsDisplay}"
+                                        Width="*"/>
+
+                </DataGrid.Columns>
+
+            </DataGrid>
+
+        </Border>
+
+        <!-- ACTIONS -->
+        <StackPanel Grid.Row="2"
+                    Orientation="Horizontal"
+                    Margin="0,12,0,0">
+
             <Button Content="Открыть"
                     Command="{Binding OpenProjectCommand}"
                     IsEnabled="{Binding SelectedProject, Converter={StaticResource IsNotNullConverter}}"
                     Style="{StaticResource MaterialDesignRaisedButton}"
-                    Margin="0,0,8,0" />
+                    Margin="0,0,8,0"/>
+
             <Button Content="Закрыть проект"
                     Command="{Binding CloseProjectCommand}"
                     IsEnabled="{Binding CanCloseProject}"
-                    Style="{StaticResource MaterialDesignFlatButton}" />
+                    Style="{StaticResource MaterialDesignFlatButton}"/>
+
         </StackPanel>
+
     </Grid>
+
 </UserControl>
 ```
 
 ---
 
-## FILE 97: ProjectsView.xaml.cs
+## FILE 98: ProjectsView.xaml.cs
 
 <a id='projectsviewxamlcs'></a>
 
@@ -5504,7 +6261,7 @@ public partial class ProjectsView : UserControl
 
 ---
 
-## FILE 98: VenuesView.xaml
+## FILE 99: VenuesView.xaml
 
 <a id='venuesviewxaml'></a>
 
@@ -5526,7 +6283,7 @@ public partial class ProjectsView : UserControl
 
 ---
 
-## FILE 99: VenuesView.xaml.cs
+## FILE 100: VenuesView.xaml.cs
 
 <a id='venuesviewxamlcs'></a>
 
@@ -5546,7 +6303,7 @@ public partial class VenuesView : UserControl
 
 ---
 
-## FILE 100: AdminWindow.xaml
+## FILE 101: AdminWindow.xaml
 
 <a id='adminwindowxaml'></a>
 
@@ -5680,7 +6437,7 @@ public partial class VenuesView : UserControl
 
 ---
 
-## FILE 101: AdminWindow.xaml.cs
+## FILE 102: AdminWindow.xaml.cs
 
 <a id='adminwindowxamlcs'></a>
 
@@ -5713,7 +6470,7 @@ public partial class AdminWindow : Window
 
 ---
 
-## FILE 102: ChangePasswordWindow.xaml
+## FILE 103: ChangePasswordWindow.xaml
 
 <a id='changepasswordwindowxaml'></a>
 
@@ -5767,7 +6524,7 @@ public partial class AdminWindow : Window
 
 ---
 
-## FILE 103: ChangePasswordWindow.xaml.cs
+## FILE 104: ChangePasswordWindow.xaml.cs
 
 <a id='changepasswordwindowxamlcs'></a>
 
@@ -5826,7 +6583,122 @@ public partial class ChangePasswordWindow : Window
 
 ---
 
-## FILE 104: LoginWindow.xaml
+## FILE 105: CreateProjectWindow.xaml
+
+<a id='createprojectwindowxaml'></a>
+
+```xml
+﻿<Window x:Class="WeddingAgency.Views.Windows.CreateProjectWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        Title="Новый проект"
+        Height="450"
+        Width="500"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        Background="{DynamicResource MaterialDesignBackground}">
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="Новый проект"
+                   Style="{StaticResource MaterialDesignHeadline5TextBlock}"
+                   Margin="0,0,0,20" />
+
+        <StackPanel Grid.Row="1">
+            <TextBox Text="{Binding ProjectNumber, UpdateSourceTrigger=PropertyChanged}"
+                     materialDesign:HintAssist.Hint="Номер проекта"
+                     Margin="0,0,0,12" />
+
+            <DatePicker SelectedDate="{Binding WeddingDate}"
+                        materialDesign:HintAssist.Hint="Дата свадьбы"
+                        Margin="0,0,0,12" />
+
+            <TextBox Text="{Binding LocationCity, UpdateSourceTrigger=PropertyChanged}"
+                     materialDesign:HintAssist.Hint="Город"
+                     Margin="0,0,0,12" />
+
+            <TextBox Text="{Binding BudgetTotal, UpdateSourceTrigger=PropertyChanged}"
+                     materialDesign:HintAssist.Hint="Бюджет"
+                     Margin="0,0,0,12" />
+
+            <TextBox Text="{Binding GuestCount, UpdateSourceTrigger=PropertyChanged}"
+                     materialDesign:HintAssist.Hint="Количество гостей"
+                     Margin="0,0,0,12" />
+
+            <ComboBox ItemsSource="{Binding Managers}"
+                      SelectedItem="{Binding SelectedManager}"
+                      DisplayMemberPath="Person.FullName"
+                      materialDesign:HintAssist.Hint="Менеджер"
+                      Margin="0,0,0,12" />
+
+            <ComboBox Text="{Binding Status}">
+                <ComboBoxItem>Новый</ComboBoxItem>
+                <ComboBoxItem>Открыт</ComboBoxItem>
+            </ComboBox>
+        </StackPanel>
+
+        <StackPanel Grid.Row="2"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Margin="0,20,0,0">
+            <Button Content="Отмена"
+                    Command="{Binding CancelCommand}"
+                    Style="{StaticResource MaterialDesignFlatButton}"
+                    Margin="0,0,8,0" />
+            <Button Content="Создать"
+                    Command="{Binding CreateCommand}"
+                    Style="{StaticResource MaterialDesignRaisedButton}" />
+        </StackPanel>
+    </Grid>
+</Window>
+```
+
+---
+
+## FILE 106: CreateProjectWindow.xaml.cs
+
+<a id='createprojectwindowxamlcs'></a>
+
+```csharp
+﻿using System.Windows;
+using WeddingAgency.ViewModels;
+
+namespace WeddingAgency.Views.Windows;
+
+public partial class CreateProjectWindow : Window
+{
+    private readonly CreateProjectViewModel _viewModel;
+
+    public CreateProjectWindow(CreateProjectViewModel viewModel)
+    {
+        InitializeComponent();
+        _viewModel = viewModel;
+        DataContext = _viewModel;
+
+        _viewModel.ProjectCreated += () =>
+        {
+            DialogResult = true;
+            Close();
+        };
+
+        _viewModel.Cancelled += () =>
+        {
+            DialogResult = false;
+            Close();
+        };
+    }
+}
+```
+
+---
+
+## FILE 107: LoginWindow.xaml
 
 <a id='loginwindowxaml'></a>
 
@@ -5888,7 +6760,7 @@ public partial class ChangePasswordWindow : Window
 
 ---
 
-## FILE 105: LoginWindow.xaml.cs
+## FILE 108: LoginWindow.xaml.cs
 
 <a id='loginwindowxamlcs'></a>
 
@@ -5959,7 +6831,7 @@ public partial class LoginWindow : Window
 
 ---
 
-## FILE 106: MainWindow.xaml
+## FILE 109: MainWindow.xaml
 
 <a id='mainwindowxaml'></a>
 
@@ -6158,7 +7030,7 @@ public partial class LoginWindow : Window
 
 ---
 
-## FILE 107: MainWindow.xaml.cs
+## FILE 110: MainWindow.xaml.cs
 
 <a id='mainwindowxamlcs'></a>
 
@@ -6180,7 +7052,7 @@ public partial class MainWindow : Window
 
 ---
 
-## FILE 108: WeddingAgency.csproj
+## FILE 111: WeddingAgency.csproj
 
 <a id='weddingagencycsproj'></a>
 
