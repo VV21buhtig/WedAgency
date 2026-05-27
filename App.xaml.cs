@@ -71,6 +71,10 @@ public partial class App : Application
                 services.AddTransient<AdminWindow>();
                 services.AddTransient<CreateProjectViewModel>();
                 services.AddTransient<CreateProjectWindow>();
+                services.AddTransient<SelectPersonViewModel>();
+                services.AddTransient<SelectPersonWindow>();
+                services.AddTransient<AddGuestWindow>();
+                services.AddTransient<AddContractorWindow>();
             })
             .Build();
     }

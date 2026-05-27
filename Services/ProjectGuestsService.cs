@@ -70,7 +70,7 @@ public class ProjectGuestsService : IProjectGuestsService
             guest.DietaryRestrictions = dietary;
             guest.TransferNeeded = transfer;
             guest.AccommodationNeeded = accommodation;
-            guest.TableId = tableNumber;
+            //guest.TableId = tableNumber;
             await _context.SaveChangesAsync();
         }
     }

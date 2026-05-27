@@ -2388,6 +2388,8 @@ namespace WeddingAgency.Services;
 public interface IProjectTimelineService
 {
     Task<List<TimelineEventItem>> GetEventsAsync(int projectId);
+    Task AddEventAsync(int projectId, DateTime? start, DateTime? end, string? description, string? location, int? responsibleId, string? notes);
+    Task DeleteEventAsync(int eventId);
 }
 ```
 
@@ -3220,6 +3222,66 @@ public class ProjectTimelineService : IProjectTimelineService
                 Notes = te.Notes
             })
             .ToListAsync();
+    }
+
+    public async Task AddEventAsync(int projectId, DateTime? start, DateTime? end, string? description, string? location, int? responsiblePersonId, string? notes)
+    {
+        // 1. Убедимся, что у проекта есть таймлайн
+        var timeline = await _context.Timelines.FirstOrDefaultAsync(t => t.ProjectId == projectId);
+        if (timeline == null)
+        {
+            timeline = new Timeline
+            {
+                ProjectId = projectId,
+                Status = "Активен"
+            };
+            _context.Timelines.Add(timeline);
+            await _context.SaveChangesAsync();
+        }
+
+        // 2. Находим ProjectPerson для ответственного
+        // Ответственный должен быть связан с этим проектом.
+        // Если responsiblePersonId null, то и ResponsiblePersonId в событии будет null.
+        int? projectPersonId = null;
+
+        if (responsiblePersonId.HasValue)
+        {
+            var projectPerson = await _context.ProjectPeople
+                .FirstOrDefaultAsync(pp => pp.ProjectId == projectId && pp.PersonId == responsiblePersonId.Value);
+
+            if (projectPerson != null)
+            {
+                projectPersonId = projectPerson.Id;
+            }
+            // Если человек не добавлен в проект ни в какой роли, 
+            // мы можем либо добавить его автоматически, либо оставить null.
+            // В данном случае оставим null, чтобы не ломать логику ролей, 
+            // либо можно добавить его как "Coordinator" или другую роль, если требуется.
+        }
+
+        var eventItem = new TimelineEvent
+        {
+            TimelineId = timeline.Id,
+            StartTime = start,
+            EndTime = end,
+            EventDescription = description,
+            Location = location,
+            ResponsiblePersonId = projectPersonId, // Используем ID из ProjectPeople
+            Notes = notes
+        };
+
+        _context.TimelineEvents.Add(eventItem);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task DeleteEventAsync(int eventId)
+    {
+        var eventItem = await _context.TimelineEvents.FindAsync(eventId);
+        if (eventItem != null)
+        {
+            _context.TimelineEvents.Remove(eventItem);
+            await _context.SaveChangesAsync();
+        }
     }
 }
 ```
@@ -4266,6 +4328,25 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
     [ObservableProperty]
     private ObservableCollection<TimelineEventItem> _timelineEvents = new();
 
+    // Таймлайн - поля для добавления
+    [ObservableProperty]
+    private DateTime? _newEventStartTime;
+
+    [ObservableProperty]
+    private DateTime? _newEventEndTime;
+
+    [ObservableProperty]
+    private string? _newEventDescription;
+
+    [ObservableProperty]
+    private string? _newEventLocation;
+
+    [ObservableProperty]
+    private string? _newEventNotes;
+
+    [ObservableProperty]
+    private User? _newEventResponsible;
+
     // Финансы
     [ObservableProperty]
     private FinanceSummaryModel? _financeSummary;
@@ -4374,6 +4455,7 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
             }
         }
     }
+
     // ========== EDIT MODE ==========
 
     [RelayCommand]
@@ -4469,11 +4551,23 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
             ClientSearchResults.Clear();
             return;
         }
+
+        // ИСПРАВЛЕНИЕ: Используем GetContext() вместо new WeddingAgencyContext()
         var context = GetContext();
+
+        var searchLower = ClientSearchText.ToLower().Trim();
+
         var results = await context.People
-            .Where(p => p.FullName.Contains(ClientSearchText) || p.PhonePrimary.Contains(ClientSearchText))
-            .Take(10)
-            .Select(p => new PersonSearchResult { Id = p.Id, FullName = p.FullName, Phone = p.PhonePrimary })
+            .Where(p => !p.IsDeleted &&
+                (p.FullName != null && p.FullName.ToLower().Contains(searchLower)) ||
+                (p.PhonePrimary != null && p.PhonePrimary.ToLower().Contains(searchLower)))
+            .Take(15)
+            .Select(p => new PersonSearchResult
+            {
+                Id = p.Id,
+                FullName = p.FullName,
+                Phone = p.PhonePrimary
+            })
             .ToListAsync();
 
         ClientSearchResults = new ObservableCollection<PersonSearchResult>(results);
@@ -4491,9 +4585,11 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
     }
 
     [RelayCommand]
-    private async Task RemoveClientAsync(ClientListItem? client)
+    private async Task RemoveClientAsync(object? parameter)
     {
+        var client = parameter as ClientListItem;
         if (client == null) return;
+
         await _peopleService.RemoveClientAsync(_projectId, client.PersonId);
         await LoadClientsAsync();
         await RefreshHeaderAsync();
@@ -4516,11 +4612,23 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
             ContractorSearchResults.Clear();
             return;
         }
+
+        // ИСПРАВЛЕНИЕ: Используем GetContext() вместо new WeddingAgencyContext()
         var context = GetContext();
+
+        var searchLower = ContractorSearchText.ToLower().Trim();
+
         var results = await context.People
-            .Where(p => p.FullName.Contains(ContractorSearchText) || p.PhonePrimary.Contains(ContractorSearchText))
-            .Take(10)
-            .Select(p => new PersonSearchResult { Id = p.Id, FullName = p.FullName, Phone = p.PhonePrimary })
+            .Where(p => !p.IsDeleted &&
+                (p.FullName != null && p.FullName.ToLower().Contains(searchLower)) ||
+                (p.PhonePrimary != null && p.PhonePrimary.ToLower().Contains(searchLower)))
+            .Take(15)
+            .Select(p => new PersonSearchResult
+            {
+                Id = p.Id,
+                FullName = p.FullName,
+                Phone = p.PhonePrimary
+            })
             .ToListAsync();
 
         ContractorSearchResults = new ObservableCollection<PersonSearchResult>(results);
@@ -4538,24 +4646,13 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
         await LoadContractorsAsync();
         await RefreshHeaderAsync();
     }
+
     [RelayCommand]
-    private async Task SaveGuestsAsync()
+    private async Task RemoveContractorAsync(object? parameter)
     {
-        foreach (var guest in Guests)
-        {
-            await _guestsService.UpdateGuestAsync(
-                guest.Id,
-                guest.InvitationStatus,
-                guest.DietaryRestrictions,
-                guest.TransferNeeded,
-                guest.AccommodationNeeded,
-                guest.TableNumber);
-        }
-    }
-    [RelayCommand]
-    private async Task RemoveContractorAsync(ContractorListItem? contractor)
-    {
+        var contractor = parameter as ContractorListItem;
         if (contractor == null) return;
+
         await _peopleService.RemoveContractorAsync(_projectId, contractor.PersonId);
         await LoadContractorsAsync();
         await RefreshHeaderAsync();
@@ -4578,11 +4675,23 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
             GuestSearchResults.Clear();
             return;
         }
+
+        // ИСПРАВЛЕНИЕ: Используем GetContext() вместо new WeddingAgencyContext()
         var context = GetContext();
+
+        var searchLower = GuestSearchText.ToLower().Trim();
+
         var results = await context.People
-            .Where(p => p.FullName.Contains(GuestSearchText) || p.PhonePrimary.Contains(GuestSearchText))
-            .Take(10)
-            .Select(p => new PersonSearchResult { Id = p.Id, FullName = p.FullName, Phone = p.PhonePrimary })
+            .Where(p => !p.IsDeleted &&
+                (p.FullName != null && p.FullName.ToLower().Contains(searchLower)) ||
+                (p.PhonePrimary != null && p.PhonePrimary.ToLower().Contains(searchLower)))
+            .Take(15)
+            .Select(p => new PersonSearchResult
+            {
+                Id = p.Id,
+                FullName = p.FullName,
+                Phone = p.PhonePrimary
+            })
             .ToListAsync();
 
         GuestSearchResults = new ObservableCollection<PersonSearchResult>(results);
@@ -4600,9 +4709,26 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
     }
 
     [RelayCommand]
-    private async Task RemoveGuestAsync(GuestListItem? guest)
+    private async Task SaveGuestsAsync()
     {
+        foreach (var guest in Guests)
+        {
+            await _guestsService.UpdateGuestAsync(
+                guest.Id,
+                guest.InvitationStatus,
+                guest.DietaryRestrictions,
+                guest.TransferNeeded,
+                guest.AccommodationNeeded,
+                guest.TableNumber);
+        }
+    }
+
+    [RelayCommand]
+    private async Task RemoveGuestAsync(object? parameter)
+    {
+        var guest = parameter as GuestListItem;
         if (guest == null) return;
+
         await _guestsService.RemoveGuestAsync(_projectId, guest.PersonId);
         await LoadGuestsAsync();
         await RefreshHeaderAsync();
@@ -4643,9 +4769,11 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
     }
 
     [RelayCommand]
-    private async Task RemoveVenueAsync(VenueItemModel? venue)
+    private async Task RemoveVenueAsync(object? parameter)
     {
+        var venue = parameter as VenueItemModel;
         if (venue == null) return;
+
         await _venueService.RemoveVenueAsync(venue.BookingId);
         await LoadVenuesAsync();
     }
@@ -4657,6 +4785,52 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
     {
         var list = await _timelineService.GetEventsAsync(_projectId);
         TimelineEvents = new ObservableCollection<TimelineEventItem>(list);
+
+        // Загружаем менеджеров для выбора ответственного, если еще не загружены
+        if (Managers.Count == 0)
+        {
+            var context = GetContext();
+            var users = await context.Users
+                .Include(u => u.Person)
+                .Where(u => u.IsActive)
+                .ToListAsync();
+            Managers = new ObservableCollection<User>(users);
+        }
+    }
+
+    [RelayCommand]
+    private async Task AddTimelineEventAsync()
+    {
+        if (string.IsNullOrWhiteSpace(NewEventDescription)) return;
+
+        await _timelineService.AddEventAsync(
+            _projectId,
+            NewEventStartTime,
+            NewEventEndTime,
+            NewEventDescription,
+            NewEventLocation,
+            NewEventResponsible?.PersonId,
+            NewEventNotes);
+
+        // Очистка полей
+        NewEventStartTime = null;
+        NewEventEndTime = null;
+        NewEventDescription = null;
+        NewEventLocation = null;
+        NewEventNotes = null;
+        NewEventResponsible = null;
+
+        await LoadTimelineAsync();
+    }
+
+    [RelayCommand]
+    private async Task DeleteTimelineEventAsync(object? parameter)
+    {
+        var eventItem = parameter as TimelineEventItem;
+        if (eventItem == null) return;
+
+        await _timelineService.DeleteEventAsync(eventItem.Id);
+        await LoadTimelineAsync();
     }
 
     // ========== ФИНАНСЫ ==========
@@ -5634,6 +5808,7 @@ public partial class PeopleView : UserControl
                               ItemsSource="{Binding Clients}"
                               AutoGenerateColumns="False"
                               IsReadOnly="True"
+                              CanUserAddRows="False"
                               ColumnWidth="*">
 
                         <DataGrid.Columns>
@@ -5727,6 +5902,7 @@ public partial class PeopleView : UserControl
                               ItemsSource="{Binding Contractors}"
                               AutoGenerateColumns="False"
                               IsReadOnly="True"
+                              CanUserAddRows="False"
                               ColumnWidth="*">
 
                         <DataGrid.Columns>
@@ -5763,7 +5939,7 @@ public partial class PeopleView : UserControl
                 </Grid>
             </TabItem>
 
-            
+
             <!-- ГОСТИ -->
             <!-- ГОСТИ -->
             <TabItem Header="Гости" PreviewMouseLeftButtonDown="OnGuestsTabSelected">
@@ -5799,7 +5975,8 @@ public partial class PeopleView : UserControl
                     </ListBox>
 
                     <DataGrid Grid.Row="1" ItemsSource="{Binding Guests}" AutoGenerateColumns="False"
-                  ColumnWidth="*">
+                              CanUserAddRows="False"
+                              ColumnWidth="*">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="ФИО" Binding="{Binding FullName}" Width="*" IsReadOnly="True" />
                             <DataGridTextColumn Header="Телефон" Binding="{Binding Phone}" Width="120" IsReadOnly="True" />
@@ -5874,6 +6051,7 @@ public partial class PeopleView : UserControl
 
                     <!-- Список площадок -->
                     <DataGrid Grid.Row="1" ItemsSource="{Binding Venues}" AutoGenerateColumns="False" IsReadOnly="True"
+                              CanUserAddRows="False"
                               ColumnWidth="*">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Название" Binding="{Binding VenueName}" Width="*" />
@@ -5900,38 +6078,64 @@ public partial class PeopleView : UserControl
             <!-- ТАЙМЛАЙН -->
             <TabItem Header="Таймлайн" PreviewMouseLeftButtonDown="OnTimelineTabSelected">
                 <Grid Margin="12">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
 
-                    <DataGrid ItemsSource="{Binding TimelineEvents}"
-                              AutoGenerateColumns="False"
-                              IsReadOnly="True"
+                    <!-- Панель добавления -->
+                    <Border Background="{DynamicResource MaterialDesignPaper}" Padding="12" CornerRadius="4" Margin="0,0,0,12">
+                        <StackPanel>
+                            <TextBlock Text="Новое событие" Style="{StaticResource MaterialDesignSubtitle1TextBlock}" Margin="0,0,0,8"/>
+                            <WrapPanel>
+                                <DatePicker SelectedDate="{Binding NewEventStartTime}" 
+                                            materialDesign:HintAssist.Hint="Дата начала" Width="120" Margin="0,0,8,8"/>
+
+                                <TextBox Text="{Binding NewEventStartTime, StringFormat='{}{0:HH:mm}'}" 
+                                         materialDesign:HintAssist.Hint="Время нач." Width="80" Margin="0,0,8,8"/>
+
+                                <TextBox Text="{Binding NewEventEndTime, StringFormat='{}{0:HH:mm}'}" 
+                                         materialDesign:HintAssist.Hint="Время кон." Width="80" Margin="0,0,8,8"/>
+
+                                <TextBox Text="{Binding NewEventDescription, UpdateSourceTrigger=PropertyChanged}" 
+                                         materialDesign:HintAssist.Hint="Описание" Width="180" Margin="0,0,8,8"/>
+
+                                <TextBox Text="{Binding NewEventLocation, UpdateSourceTrigger=PropertyChanged}" 
+                                         materialDesign:HintAssist.Hint="Локация" Width="140" Margin="0,0,8,8"/>
+
+                                <ComboBox ItemsSource="{Binding Managers}" SelectedItem="{Binding NewEventResponsible}"
+                                          DisplayMemberPath="Person.FullName" Width="140" Margin="0,0,8,8"
+                                          materialDesign:HintAssist.Hint="Ответственный"/>
+
+                                <TextBox Text="{Binding NewEventNotes, UpdateSourceTrigger=PropertyChanged}" 
+                                         materialDesign:HintAssist.Hint="Заметки" Width="160" Margin="0,0,8,8"/>
+
+                                <Button Content="Добавить" Command="{Binding AddTimelineEventCommand}"
+                                        Style="{StaticResource MaterialDesignRaisedButton}" VerticalAlignment="Center"/>
+                            </WrapPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Таблица -->
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding TimelineEvents}" AutoGenerateColumns="False" IsReadOnly="True"
+                              CanUserAddRows="False"
                               ColumnWidth="*">
-
                         <DataGrid.Columns>
-
-                            <DataGridTextColumn Header="Начало"
-                                                Binding="{Binding StartTime, StringFormat='{}{0:HH:mm}'}"
-                                                Width="70" />
-
-                            <DataGridTextColumn Header="Конец"
-                                                Binding="{Binding EndTime, StringFormat='{}{0:HH:mm}'}"
-                                                Width="70" />
-
-                            <DataGridTextColumn Header="Описание"
-                                                Binding="{Binding Description}"
-                                                Width="*" />
-
-                            <DataGridTextColumn Header="Локация"
-                                                Binding="{Binding Location}"
-                                                Width="140" />
-
-                            <DataGridTextColumn Header="Ответственный"
-                                                Binding="{Binding ResponsiblePerson}"
-                                                Width="140" />
-
-                            <DataGridTextColumn Header="Заметки"
-                                                Binding="{Binding Notes}"
-                                                Width="160" />
-
+                            <DataGridTextColumn Header="Начало" Binding="{Binding StartTime, StringFormat='{}{0:dd.MM HH:mm}'}" Width="110" />
+                            <DataGridTextColumn Header="Конец" Binding="{Binding EndTime, StringFormat='{}{0:dd.MM HH:mm}'}" Width="110" />
+                            <DataGridTextColumn Header="Описание" Binding="{Binding Description}" Width="*" />
+                            <DataGridTextColumn Header="Локация" Binding="{Binding Location}" Width="140" />
+                            <DataGridTextColumn Header="Ответственный" Binding="{Binding ResponsiblePerson}" Width="140" />
+                            <DataGridTextColumn Header="Заметки" Binding="{Binding Notes}" Width="160" />
+                            <DataGridTemplateColumn Header="" Width="60">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Content="✕" Width="40" Height="24"
+                                                Command="{Binding DataContext.DeleteTimelineEventCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>

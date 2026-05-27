@@ -7,6 +7,7 @@ using WeddingAgency.Models;
 using WeddingAgency.Services;
 using WeddingAgency.ViewModels.Base;
 using WeddingAgency.ViewModels.ProjectDetails;
+using WeddingAgency.Views.Windows;
 
 namespace WeddingAgency.ViewModels;
 
@@ -32,42 +33,26 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
     private ObservableCollection<ClientListItem> _clients = new();
 
     [ObservableProperty]
-    private string _clientSearchText = string.Empty;
-
-    [ObservableProperty]
-    private ObservableCollection<PersonSearchResult> _clientSearchResults = new();
+    private ClientListItem? _selectedClient;
 
     // Подрядчики
     [ObservableProperty]
     private ObservableCollection<ContractorListItem> _contractors = new();
 
     [ObservableProperty]
-    private string _contractorSearchText = string.Empty;
-
-    [ObservableProperty]
-    private ObservableCollection<PersonSearchResult> _contractorSearchResults = new();
-
-    [ObservableProperty]
-    private string? _contractorService;
-
-    [ObservableProperty]
-    private decimal? _contractorCost;
+    private ContractorListItem? _selectedContractor;
 
     // Гости
     [ObservableProperty]
     private ObservableCollection<GuestListItem> _guests = new();
 
     [ObservableProperty]
-    private string _guestSearchText = string.Empty;
-
-    [ObservableProperty]
-    private ObservableCollection<PersonSearchResult> _guestSearchResults = new();
+    private GuestListItem? _selectedGuest;
 
     // Площадка
     [ObservableProperty]
     private ObservableCollection<VenueItemModel> _venues = new();
 
-    // Поиск площадок
     [ObservableProperty]
     private string _venueSearchText = string.Empty;
 
@@ -86,6 +71,24 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
     // Таймлайн
     [ObservableProperty]
     private ObservableCollection<TimelineEventItem> _timelineEvents = new();
+
+    [ObservableProperty]
+    private DateTime? _newEventStartTime;
+
+    [ObservableProperty]
+    private DateTime? _newEventEndTime;
+
+    [ObservableProperty]
+    private string? _newEventDescription;
+
+    [ObservableProperty]
+    private string? _newEventLocation;
+
+    [ObservableProperty]
+    private string? _newEventNotes;
+
+    [ObservableProperty]
+    private User? _newEventResponsible;
 
     // Финансы
     [ObservableProperty]
@@ -119,7 +122,7 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
     [ObservableProperty]
     private string? _editStatus;
 
-    // Менеджеры для выбора
+    // Менеджеры
     [ObservableProperty]
     private ObservableCollection<User> _managers = new();
 
@@ -152,10 +155,7 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
     {
         if (parameter is int projectId)
         {
-            // Если уже загружен этот же проект — ничего не делаем
-            if (_projectId == projectId && Header != null)
-                return;
-
+            if (_projectId == projectId && Header != null) return;
             if (_isLoading) return;
 
             _projectId = projectId;
@@ -189,23 +189,19 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
                     OnPropertyChanged(nameof(Title));
                 }
             }
-            finally
-            {
-                _isLoading = false;
-            }
+            finally { _isLoading = false; }
         }
     }
+
     // ========== EDIT MODE ==========
 
     [RelayCommand]
     private async Task EnableEditMode()
     {
         if (Header == null) return;
-
         using var scope = _serviceProvider.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<WeddingAgencyContext>();
         var project = await context.Projects.FindAsync(_projectId);
-
         if (project == null) return;
 
         EditProjectNumber = project.ProjectNumber;
@@ -215,30 +211,21 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
         EditGuestCount = project.GuestCountMin;
         EditStatus = project.Status;
 
-        var users = await context.Users
-            .Include(u => u.Person)
-            .Where(u => u.IsActive)
-            .ToListAsync();
+        var users = await context.Users.Include(u => u.Person).Where(u => u.IsActive).ToListAsync();
         Managers = new ObservableCollection<User>(users);
         SelectedManager = users.FirstOrDefault(u => u.Id == project.ResponsibleManagerId);
-
         IsEditMode = true;
     }
 
     [RelayCommand]
-    private void CancelEdit()
-    {
-        IsEditMode = false;
-    }
+    private void CancelEdit() => IsEditMode = false;
 
     [RelayCommand]
     private async Task SaveEditAsync()
     {
         if (Header == null) return;
-
         using var scope = _serviceProvider.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<WeddingAgencyContext>();
-
         var project = await context.Projects.FindAsync(_projectId);
         if (project == null) return;
 
@@ -249,7 +236,6 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
         project.GuestCountMin = EditGuestCount;
         project.Status = EditStatus ?? Header.Status;
         project.ResponsibleManagerId = SelectedManager?.PersonId;
-
         await context.SaveChangesAsync();
 
         Header = new ProjectHeaderModel
@@ -267,7 +253,6 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
             GuestCount = Header.GuestCount
         };
         OnPropertyChanged(nameof(Title));
-
         IsEditMode = false;
     }
 
@@ -283,39 +268,42 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
     }
 
     [RelayCommand]
-    private async Task SearchClientsAsync()
+    private async Task AddClientAsync()
     {
-        if (string.IsNullOrWhiteSpace(ClientSearchText))
+        var vm = _serviceProvider.GetRequiredService<SelectPersonViewModel>();
+        var window = new SelectPersonWindow(vm);
+        window.ShowDialog();
+        if (window.Tag is PersonSearchResult person)
         {
-            ClientSearchResults.Clear();
-            return;
+            await _peopleService.AddClientAsync(_projectId, person.Id);
+            await LoadClientsAsync();
+            await RefreshHeaderAsync();
         }
-        var context = GetContext();
-        var results = await context.People
-            .Where(p => p.FullName.Contains(ClientSearchText) || p.PhonePrimary.Contains(ClientSearchText))
-            .Take(10)
-            .Select(p => new PersonSearchResult { Id = p.Id, FullName = p.FullName, Phone = p.PhonePrimary })
-            .ToListAsync();
-
-        ClientSearchResults = new ObservableCollection<PersonSearchResult>(results);
     }
 
     [RelayCommand]
-    private async Task AddClientAsync(PersonSearchResult? person)
+    private async Task EditClientAsync()
     {
-        if (person == null) return;
-        await _peopleService.AddClientAsync(_projectId, person.Id);
-        ClientSearchText = string.Empty;
-        ClientSearchResults.Clear();
-        await LoadClientsAsync();
-        await RefreshHeaderAsync();
+        if (SelectedClient == null) return;
+        var vm = _serviceProvider.GetRequiredService<SelectPersonViewModel>();
+        vm.SearchText = SelectedClient.FullName;
+        vm.SearchCommand.Execute(null);
+        var window = new SelectPersonWindow(vm);
+        window.ShowDialog();
+        if (window.Tag is PersonSearchResult person)
+        {
+            await _peopleService.RemoveClientAsync(_projectId, SelectedClient.PersonId);
+            await _peopleService.AddClientAsync(_projectId, person.Id);
+            await LoadClientsAsync();
+            await RefreshHeaderAsync();
+        }
     }
 
     [RelayCommand]
-    private async Task RemoveClientAsync(ClientListItem? client)
+    private async Task RemoveClientAsync()
     {
-        if (client == null) return;
-        await _peopleService.RemoveClientAsync(_projectId, client.PersonId);
+        if (SelectedClient == null) return;
+        await _peopleService.RemoveClientAsync(_projectId, SelectedClient.PersonId);
         await LoadClientsAsync();
         await RefreshHeaderAsync();
     }
@@ -330,54 +318,41 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
     }
 
     [RelayCommand]
-    private async Task SearchContractorsAsync()
+    private async Task AddContractorAsync()
     {
-        if (string.IsNullOrWhiteSpace(ContractorSearchText))
+        var vm = _serviceProvider.GetRequiredService<SelectPersonViewModel>();
+        var window = new AddContractorWindow(vm);
+        if (window.ShowDialog() == true && window.SelectedPerson != null)
         {
-            ContractorSearchResults.Clear();
-            return;
+            await _peopleService.AddContractorAsync(_projectId, window.SelectedPerson.Id, window.ContractorService, window.ContractorCost, null);
+            await LoadContractorsAsync();
+            await RefreshHeaderAsync();
         }
-        var context = GetContext();
-        var results = await context.People
-            .Where(p => p.FullName.Contains(ContractorSearchText) || p.PhonePrimary.Contains(ContractorSearchText))
-            .Take(10)
-            .Select(p => new PersonSearchResult { Id = p.Id, FullName = p.FullName, Phone = p.PhonePrimary })
-            .ToListAsync();
-
-        ContractorSearchResults = new ObservableCollection<PersonSearchResult>(results);
     }
 
     [RelayCommand]
-    private async Task AddContractorAsync(PersonSearchResult? person)
+    private async Task EditContractorAsync()
     {
-        if (person == null) return;
-        await _peopleService.AddContractorAsync(_projectId, person.Id, ContractorService, ContractorCost, null);
-        ContractorSearchText = string.Empty;
-        ContractorService = null;
-        ContractorCost = null;
-        ContractorSearchResults.Clear();
-        await LoadContractorsAsync();
-        await RefreshHeaderAsync();
-    }
-    [RelayCommand]
-    private async Task SaveGuestsAsync()
-    {
-        foreach (var guest in Guests)
+        if (SelectedContractor == null) return;
+        var vm = _serviceProvider.GetRequiredService<SelectPersonViewModel>();
+        vm.FillForContractor(SelectedContractor.Service, SelectedContractor.Cost);
+        vm.SearchText = SelectedContractor.FullName;
+        vm.SearchCommand.Execute(null);
+        var window = new AddContractorWindow(vm);
+        if (window.ShowDialog() == true && window.SelectedPerson != null)
         {
-            await _guestsService.UpdateGuestAsync(
-                guest.Id,
-                guest.InvitationStatus,
-                guest.DietaryRestrictions,
-                guest.TransferNeeded,
-                guest.AccommodationNeeded,
-                guest.TableNumber);
+            await _peopleService.RemoveContractorAsync(_projectId, SelectedContractor.PersonId);
+            await _peopleService.AddContractorAsync(_projectId, window.SelectedPerson.Id, window.ContractorService, window.ContractorCost, null);
+            await LoadContractorsAsync();
+            await RefreshHeaderAsync();
         }
     }
+
     [RelayCommand]
-    private async Task RemoveContractorAsync(ContractorListItem? contractor)
+    private async Task RemoveContractorAsync()
     {
-        if (contractor == null) return;
-        await _peopleService.RemoveContractorAsync(_projectId, contractor.PersonId);
+        if (SelectedContractor == null) return;
+        await _peopleService.RemoveContractorAsync(_projectId, SelectedContractor.PersonId);
         await LoadContractorsAsync();
         await RefreshHeaderAsync();
     }
@@ -392,39 +367,51 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
     }
 
     [RelayCommand]
-    private async Task SearchGuestsAsync()
+    private async Task AddGuestAsync()
     {
-        if (string.IsNullOrWhiteSpace(GuestSearchText))
+        var vm = _serviceProvider.GetRequiredService<SelectPersonViewModel>();
+        var window = new AddGuestWindow(vm);
+        if (window.ShowDialog() == true && window.SelectedPerson != null)
         {
-            GuestSearchResults.Clear();
-            return;
+            await _guestsService.AddGuestAsync(_projectId, window.SelectedPerson.Id);
+            var guests = await _guestsService.GetGuestsAsync(_projectId);
+            var lastGuest = guests.LastOrDefault();
+            if (lastGuest != null)
+            {
+                await _guestsService.UpdateGuestAsync(lastGuest.Id, window.InvitationStatus, window.DietaryRestrictions, window.TransferNeeded, window.AccommodationNeeded, window.TableNumber);
+            }
+            await LoadGuestsAsync();
+            await RefreshHeaderAsync();
         }
-        var context = GetContext();
-        var results = await context.People
-            .Where(p => p.FullName.Contains(GuestSearchText) || p.PhonePrimary.Contains(GuestSearchText))
-            .Take(10)
-            .Select(p => new PersonSearchResult { Id = p.Id, FullName = p.FullName, Phone = p.PhonePrimary })
-            .ToListAsync();
-
-        GuestSearchResults = new ObservableCollection<PersonSearchResult>(results);
     }
 
     [RelayCommand]
-    private async Task AddGuestAsync(PersonSearchResult? person)
+    private async Task EditGuestAsync()
     {
-        if (person == null) return;
-        await _guestsService.AddGuestAsync(_projectId, person.Id);
-        GuestSearchText = string.Empty;
-        GuestSearchResults.Clear();
-        await LoadGuestsAsync();
-        await RefreshHeaderAsync();
+        if (SelectedGuest == null) return;
+        var vm = _serviceProvider.GetRequiredService<SelectPersonViewModel>();
+        vm.FillForGuest(SelectedGuest.InvitationStatus, SelectedGuest.DietaryRestrictions, SelectedGuest.TransferNeeded, SelectedGuest.AccommodationNeeded, SelectedGuest.TableNumber);
+        vm.SearchText = SelectedGuest.FullName;
+        vm.SearchCommand.Execute(null);
+        var window = new AddGuestWindow(vm);
+        if (window.ShowDialog() == true && window.SelectedPerson != null)
+        {
+            await _guestsService.RemoveGuestAsync(_projectId, SelectedGuest.PersonId);
+            await _guestsService.AddGuestAsync(_projectId, window.SelectedPerson.Id);
+            var guests = await _guestsService.GetGuestsAsync(_projectId);
+            var lastGuest = guests.LastOrDefault();
+            if (lastGuest != null)
+                await _guestsService.UpdateGuestAsync(lastGuest.Id, window.InvitationStatus, window.DietaryRestrictions, window.TransferNeeded, window.AccommodationNeeded, window.TableNumber);
+            await LoadGuestsAsync();
+            await RefreshHeaderAsync();
+        }
     }
 
     [RelayCommand]
-    private async Task RemoveGuestAsync(GuestListItem? guest)
+    private async Task RemoveGuestAsync()
     {
-        if (guest == null) return;
-        await _guestsService.RemoveGuestAsync(_projectId, guest.PersonId);
+        if (SelectedGuest == null) return;
+        await _guestsService.RemoveGuestAsync(_projectId, SelectedGuest.PersonId);
         await LoadGuestsAsync();
         await RefreshHeaderAsync();
     }
@@ -432,107 +419,46 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
     // ========== ПЛОЩАДКА ==========
 
     [RelayCommand]
-    private async Task LoadVenuesAsync()
-    {
-        var list = await _venueService.GetVenuesAsync(_projectId);
-        Venues = new ObservableCollection<VenueItemModel>(list);
-    }
+    private async Task LoadVenuesAsync() { var list = await _venueService.GetVenuesAsync(_projectId); Venues = new ObservableCollection<VenueItemModel>(list); }
 
     [RelayCommand]
-    private async Task SearchVenuesAsync()
-    {
-        if (string.IsNullOrWhiteSpace(VenueSearchText))
-        {
-            VenueSearchResults.Clear();
-            return;
-        }
-        var results = await _venueService.SearchVenuesAsync(VenueSearchText);
-        VenueSearchResults = new ObservableCollection<VenuesCatalog>(results);
-    }
+    private async Task SearchVenuesAsync() { if (string.IsNullOrWhiteSpace(VenueSearchText)) { VenueSearchResults.Clear(); return; } var results = await _venueService.SearchVenuesAsync(VenueSearchText); VenueSearchResults = new ObservableCollection<VenuesCatalog>(results); }
 
     [RelayCommand]
-    private async Task AddVenueAsync(VenuesCatalog? venue)
-    {
-        if (venue == null) return;
-        await _venueService.AddVenueAsync(_projectId, venue.Id, NewVenueRentalCost, NewVenueDeposit, NewVenueEventDate);
-        VenueSearchText = string.Empty;
-        NewVenueRentalCost = null;
-        NewVenueDeposit = null;
-        NewVenueEventDate = null;
-        VenueSearchResults.Clear();
-        await LoadVenuesAsync();
-    }
+    private async Task AddVenueAsync(VenuesCatalog? venue) { if (venue == null) return; await _venueService.AddVenueAsync(_projectId, venue.Id, NewVenueRentalCost, NewVenueDeposit, NewVenueEventDate); VenueSearchText = string.Empty; NewVenueRentalCost = null; NewVenueDeposit = null; NewVenueEventDate = null; VenueSearchResults.Clear(); await LoadVenuesAsync(); }
 
     [RelayCommand]
-    private async Task RemoveVenueAsync(VenueItemModel? venue)
-    {
-        if (venue == null) return;
-        await _venueService.RemoveVenueAsync(venue.BookingId);
-        await LoadVenuesAsync();
-    }
+    private async Task RemoveVenueAsync(object? parameter) { if (parameter is VenueItemModel venue) { await _venueService.RemoveVenueAsync(venue.BookingId); await LoadVenuesAsync(); } }
 
     // ========== ТАЙМЛАЙН ==========
 
     [RelayCommand]
-    private async Task LoadTimelineAsync()
-    {
-        var list = await _timelineService.GetEventsAsync(_projectId);
-        TimelineEvents = new ObservableCollection<TimelineEventItem>(list);
-    }
+    private async Task LoadTimelineAsync() { var list = await _timelineService.GetEventsAsync(_projectId); TimelineEvents = new ObservableCollection<TimelineEventItem>(list); if (Managers.Count == 0) { var context = GetContext(); var users = await context.Users.Include(u => u.Person).Where(u => u.IsActive).ToListAsync(); Managers = new ObservableCollection<User>(users); } }
+
+    [RelayCommand]
+    private async Task AddTimelineEventAsync() { if (string.IsNullOrWhiteSpace(NewEventDescription)) return; await _timelineService.AddEventAsync(_projectId, NewEventStartTime, NewEventEndTime, NewEventDescription, NewEventLocation, NewEventResponsible?.PersonId, NewEventNotes); NewEventStartTime = null; NewEventEndTime = null; NewEventDescription = null; NewEventLocation = null; NewEventNotes = null; NewEventResponsible = null; await LoadTimelineAsync(); }
+
+    [RelayCommand]
+    private async Task DeleteTimelineEventAsync(object? parameter) { if (parameter is TimelineEventItem eventItem) { await _timelineService.DeleteEventAsync(eventItem.Id); await LoadTimelineAsync(); } }
 
     // ========== ФИНАНСЫ ==========
 
     [RelayCommand]
-    private async Task LoadFinanceAsync()
-    {
-        if (IsFinanceLoaded) return;
-        IsBusy = true;
-        try
-        {
-            FinanceSummary = await _financeService.GetSummaryAsync(_projectId);
-            var transactions = await _financeService.GetTransactionsAsync(_projectId);
-            FinanceTransactions = new ObservableCollection<FinanceTransactionModel>(transactions);
-            IsFinanceLoaded = true;
-        }
-        finally
-        {
-            IsBusy = false;
-        }
-    }
+    private async Task LoadFinanceAsync() { if (IsFinanceLoaded) return; IsBusy = true; try { FinanceSummary = await _financeService.GetSummaryAsync(_projectId); var transactions = await _financeService.GetTransactionsAsync(_projectId); FinanceTransactions = new ObservableCollection<FinanceTransactionModel>(transactions); IsFinanceLoaded = true; } finally { IsBusy = false; } }
 
     // ========== НАЗАД ==========
 
     [RelayCommand]
-    private void GoBack()
-    {
-        _navigation.NavigateTo<ProjectsViewModel>();
-    }
+    private void GoBack() => _navigation.NavigateTo<ProjectsViewModel>();
 
     private async Task RefreshHeaderAsync()
     {
         using var scope = _serviceProvider.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<WeddingAgencyContext>();
-        var p = await context.Projects
-            .Include(p => p.ResponsibleManager)
-            .Include(p => p.ProjectPeople)
-            .FirstOrDefaultAsync(p => p.Id == _projectId);
-
+        var p = await context.Projects.Include(p => p.ResponsibleManager).Include(p => p.ProjectPeople).FirstOrDefaultAsync(p => p.Id == _projectId);
         if (p != null && Header != null)
         {
-            Header = new ProjectHeaderModel
-            {
-                Id = Header.Id,
-                ProjectNumber = p.ProjectNumber,
-                WeddingDate = p.WeddingDate,
-                Status = p.Status ?? "",
-                BudgetTotal = p.BudgetTotal,
-                GuestCountMin = p.GuestCountMin,
-                LocationCity = p.LocationCity,
-                ManagerName = p.ResponsibleManager?.FullName ?? "Не назначен",
-                ClientCount = p.ProjectPeople.Count(pp => pp.Role == "Client"),
-                ContractorCount = p.ProjectPeople.Count(pp => pp.Role == "Contractor"),
-                GuestCount = p.ProjectPeople.Count(pp => pp.Role == "Guest")
-            };
+            Header = new ProjectHeaderModel { Id = Header.Id, ProjectNumber = p.ProjectNumber, WeddingDate = p.WeddingDate, Status = p.Status ?? "", BudgetTotal = p.BudgetTotal, GuestCountMin = p.GuestCountMin, LocationCity = p.LocationCity, ManagerName = p.ResponsibleManager?.FullName ?? "Не назначен", ClientCount = p.ProjectPeople.Count(pp => pp.Role == "Client"), ContractorCount = p.ProjectPeople.Count(pp => pp.Role == "Contractor"), GuestCount = p.ProjectPeople.Count(pp => pp.Role == "Guest") };
             OnPropertyChanged(nameof(Title));
         }
     }

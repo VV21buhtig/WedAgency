@@ -4,204 +4,95 @@
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
 
     <Grid Margin="20">
-
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- BACK -->
-        <Button Grid.Row="0"
-                Content="← Назад"
-                Command="{Binding GoBackCommand}"
+        <Button Grid.Row="0" Content="← Назад" Command="{Binding GoBackCommand}"
                 Style="{StaticResource MaterialDesignFlatButton}"
-                HorizontalAlignment="Left"
-                Margin="0,0,0,12"/>
+                HorizontalAlignment="Left" Margin="0,0,0,12"/>
 
-        <!-- ========================= -->
         <!-- VIEW HEADER -->
-        <!-- ========================= -->
-
-        <Border Grid.Row="1"
-                Background="{DynamicResource MaterialDesignPaper}"
-                CornerRadius="6"
-                Padding="24"
-                Margin="0,0,0,12"
+        <Border Grid.Row="1" Background="{DynamicResource MaterialDesignPaper}" CornerRadius="6" Padding="24" Margin="0,0,0,12"
                 Visibility="{Binding IsEditMode, Converter={StaticResource InvertBoolConverter}}">
-
             <Grid>
-
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-
-                <!-- TOP -->
                 <Grid Grid.Row="0">
-
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-
-                    <TextBlock Text="{Binding Header.ProjectNumber}"
-                               FontSize="34"
-                               FontWeight="Bold"
-                               VerticalAlignment="Center"/>
-
-                    <Button Grid.Column="1"
-                            Content="Редактировать"
-                            Command="{Binding EnableEditModeCommand}"
+                    <TextBlock Text="{Binding Header.ProjectNumber}" FontSize="34" FontWeight="Bold" VerticalAlignment="Center"/>
+                    <Button Grid.Column="1" Content="Редактировать" Command="{Binding EnableEditModeCommand}"
                             Style="{StaticResource MaterialDesignRaisedButton}"/>
-
                 </Grid>
-
-                <!-- INFO -->
-                <UniformGrid Grid.Row="1"
-                             Columns="5"
-                             Margin="0,24,0,0">
-
+                <UniformGrid Grid.Row="1" Columns="5" Margin="0,24,0,0">
                     <StackPanel>
-                        <TextBlock Text="Статус"
-                                   Foreground="Gray"
-                                   FontSize="12"/>
-                        <TextBlock Text="{Binding Header.Status}"
-                                   FontWeight="SemiBold"/>
+                        <TextBlock Text="Статус" Foreground="Gray" FontSize="12"/>
+                        <TextBlock Text="{Binding Header.Status}" FontWeight="SemiBold"/>
                     </StackPanel>
-
                     <StackPanel>
-                        <TextBlock Text="Дата"
-                                   Foreground="Gray"
-                                   FontSize="12"/>
-                        <TextBlock Text="{Binding Header.WeddingDate, StringFormat={}{0:dd.MM.yyyy}}"
-                                   FontWeight="SemiBold"/>
+                        <TextBlock Text="Дата" Foreground="Gray" FontSize="12"/>
+                        <TextBlock Text="{Binding Header.WeddingDate, StringFormat={}{0:dd.MM.yyyy}}" FontWeight="SemiBold"/>
                     </StackPanel>
-
                     <StackPanel>
-                        <TextBlock Text="Город"
-                                   Foreground="Gray"
-                                   FontSize="12"/>
-                        <TextBlock Text="{Binding Header.LocationCity}"
-                                   FontWeight="SemiBold"/>
+                        <TextBlock Text="Город" Foreground="Gray" FontSize="12"/>
+                        <TextBlock Text="{Binding Header.LocationCity}" FontWeight="SemiBold"/>
                     </StackPanel>
-
                     <StackPanel>
-                        <TextBlock Text="Бюджет"
-                                   Foreground="Gray"
-                                   FontSize="12"/>
-                        <TextBlock Text="{Binding Header.BudgetTotal, StringFormat={}{0:N0} ₽}"
-                                   FontWeight="SemiBold"/>
+                        <TextBlock Text="Бюджет" Foreground="Gray" FontSize="12"/>
+                        <TextBlock Text="{Binding Header.BudgetTotal, StringFormat={}{0:N0} ₽}" FontWeight="SemiBold"/>
                     </StackPanel>
-
                     <StackPanel>
-                        <TextBlock Text="Менеджер"
-                                   Foreground="Gray"
-                                   FontSize="12"/>
-                        <TextBlock Text="{Binding Header.ManagerName}"
-                                   FontWeight="SemiBold"/>
+                        <TextBlock Text="Менеджер" Foreground="Gray" FontSize="12"/>
+                        <TextBlock Text="{Binding Header.ManagerName}" FontWeight="SemiBold"/>
                     </StackPanel>
-
                 </UniformGrid>
-
-                <!-- COUNTERS -->
-                <StackPanel Grid.Row="2"
-                            Orientation="Horizontal"
-                            Margin="0,24,0,0">
-
-                    <TextBlock Text="{Binding Header.ClientCount, StringFormat=Клиентов: {0}}"
-                               FontWeight="Bold"
-                               Margin="0,0,24,0"/>
-
-                    <TextBlock Text="{Binding Header.ContractorCount, StringFormat=Подрядчиков: {0}}"
-                               FontWeight="Bold"
-                               Margin="0,0,24,0"/>
-
-                    <TextBlock Text="{Binding Header.GuestCount, StringFormat=Гостей: {0}}"
-                               FontWeight="Bold"/>
-
+                <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,24,0,0">
+                    <TextBlock Text="{Binding Header.ClientCount, StringFormat=Клиентов: {0}}" FontWeight="Bold" Margin="0,0,24,0"/>
+                    <TextBlock Text="{Binding Header.ContractorCount, StringFormat=Подрядчиков: {0}}" FontWeight="Bold" Margin="0,0,24,0"/>
+                    <TextBlock Text="{Binding Header.GuestCount, StringFormat=Гостей: {0}}" FontWeight="Bold"/>
                 </StackPanel>
-
             </Grid>
-
         </Border>
 
-        <!-- ========================= -->
         <!-- EDIT HEADER -->
-        <!-- ========================= -->
-
-        <Border Grid.Row="1"
-                Background="{DynamicResource MaterialDesignPaper}"
-                CornerRadius="6"
-                Padding="24"
-                Margin="0,0,0,12"
+        <Border Grid.Row="1" Background="{DynamicResource MaterialDesignPaper}" CornerRadius="6" Padding="24" Margin="0,0,0,12"
                 Visibility="{Binding IsEditMode, Converter={StaticResource BoolToVisibilityConverter}}">
-
             <Grid>
-
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-
-                <!-- TOP -->
                 <Grid Grid.Row="0">
-
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-
-                    <TextBox Text="{Binding EditProjectNumber}"
-                             FontSize="34"
-                             FontWeight="Bold"
-                             Width="420"/>
-
-                    <StackPanel Grid.Column="1"
-                                Orientation="Horizontal">
-
-                        <Button Content="Сохранить"
-                                Command="{Binding SaveEditCommand}"
-                                Style="{StaticResource MaterialDesignRaisedButton}"
-                                Margin="0,0,8,0"/>
-
-                        <Button Content="Отмена"
-                                Command="{Binding CancelEditCommand}"
-                                Style="{StaticResource MaterialDesignFlatButton}"/>
-
+                    <TextBox Text="{Binding EditProjectNumber}" FontSize="34" FontWeight="Bold" Width="420"/>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                        <Button Content="Сохранить" Command="{Binding SaveEditCommand}" Style="{StaticResource MaterialDesignRaisedButton}" Margin="0,0,8,0"/>
+                        <Button Content="Отмена" Command="{Binding CancelEditCommand}" Style="{StaticResource MaterialDesignFlatButton}"/>
                     </StackPanel>
-
                 </Grid>
-
-                <!-- INFO -->
-                <UniformGrid Grid.Row="1"
-                             Columns="5"
-                             Margin="0,24,0,0">
-
+                <UniformGrid Grid.Row="1" Columns="5" Margin="0,24,0,0">
                     <ComboBox Text="{Binding EditStatus}">
                         <ComboBoxItem>Новый</ComboBoxItem>
                         <ComboBoxItem>Открыт</ComboBoxItem>
                         <ComboBoxItem>Закрыт</ComboBoxItem>
                     </ComboBox>
-
                     <DatePicker SelectedDate="{Binding EditWeddingDate}"/>
-
-                    <TextBox Text="{Binding EditLocationCity}"
-                             materialDesign:HintAssist.Hint="Город"/>
-
-                    <TextBox Text="{Binding EditBudgetTotal}"
-                             materialDesign:HintAssist.Hint="Бюджет"/>
-
-                    <ComboBox ItemsSource="{Binding Managers}"
-                              SelectedItem="{Binding SelectedManager}"
-                              DisplayMemberPath="Person.FullName"/>
-
+                    <TextBox Text="{Binding EditLocationCity}" materialDesign:HintAssist.Hint="Город"/>
+                    <TextBox Text="{Binding EditBudgetTotal}" materialDesign:HintAssist.Hint="Бюджет"/>
+                    <ComboBox ItemsSource="{Binding Managers}" SelectedItem="{Binding SelectedManager}" DisplayMemberPath="Person.FullName"/>
                 </UniformGrid>
-
             </Grid>
-
         </Border>
 
         <!-- TABS -->
@@ -211,77 +102,24 @@
             <TabItem Header="Клиенты" PreviewMouseLeftButtonDown="OnClientsTabSelected">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                        <TextBox materialDesign:HintAssist.Hint="Поиск человека по имени или телефону"
-                                 Text="{Binding ClientSearchText, UpdateSourceTrigger=PropertyChanged}"
-                                 Width="250"
-                                 Margin="0,0,8,0"
-                                 KeyDown="OnClientSearchKeyDown" />
-
-                        <Button Content="Найти"
-                                Command="{Binding SearchClientsCommand}"
-                                Style="{StaticResource MaterialDesignFlatButton}" />
+                        <Button Content="Добавить" Command="{Binding AddClientCommand}" Style="{StaticResource MaterialDesignRaisedButton}" Margin="0,0,8,0"/>
+                        <Button Content="Редактировать" Command="{Binding EditClientCommand}" Style="{StaticResource MaterialDesignFlatButton}"
+                                IsEnabled="{Binding SelectedClient, Converter={StaticResource IsNotNullConverter}}"/>
+                        <Button Content="Удалить" Command="{Binding RemoveClientCommand}" Style="{StaticResource MaterialDesignFlatButton}"
+                                IsEnabled="{Binding SelectedClient, Converter={StaticResource IsNotNullConverter}}" Margin="8,0,0,0"/>
                     </StackPanel>
-
-                    <ListBox Grid.Row="0"
-                             ItemsSource="{Binding ClientSearchResults}"
-                             Visibility="{Binding ClientSearchResults.Count, Converter={StaticResource BoolToVisibilityConverter}}"
-                             MaxHeight="120"
-                             Margin="0,0,0,8">
-
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <Grid>
-                                    <TextBlock Text="{Binding FullName}" />
-
-                                    <Button Content="Добавить"
-                                            HorizontalAlignment="Right"
-                                            Command="{Binding DataContext.AddClientCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
-                                            CommandParameter="{Binding}" />
-                                </Grid>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-
-                    <DataGrid Grid.Row="1"
-                              ItemsSource="{Binding Clients}"
-                              AutoGenerateColumns="False"
-                              IsReadOnly="True"
-                              ColumnWidth="*">
-
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding Clients}" SelectedItem="{Binding SelectedClient}"
+                              IsSynchronizedWithCurrentItem="True"
+                              AutoGenerateColumns="False" IsReadOnly="True"
+                              CanUserAddRows="False" CanUserResizeColumns="False" MinHeight="200">
                         <DataGrid.Columns>
-
-                            <DataGridTextColumn Header="ФИО"
-                                                Binding="{Binding FullName}"
-                                                Width="*" />
-
-                            <DataGridTextColumn Header="Телефон"
-                                                Binding="{Binding Phone}"
-                                                Width="140" />
-
-                            <DataGridTextColumn Header="Email"
-                                                Binding="{Binding Email}"
-                                                Width="180" />
-
-                            <DataGridTemplateColumn Header=""
-                                                    Width="60">
-
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Button Content="✕"
-                                                Width="40"
-                                                Height="24"
-                                                Command="{Binding DataContext.RemoveClientCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                CommandParameter="{Binding}" />
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-
-                            </DataGridTemplateColumn>
-
+                            <DataGridTextColumn Header="ФИО" Binding="{Binding FullName}" Width="*"/>
+                            <DataGridTextColumn Header="Телефон" Binding="{Binding Phone}" Width="140"/>
+                            <DataGridTextColumn Header="Email" Binding="{Binding Email}" Width="180"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
@@ -290,158 +128,58 @@
             <!-- ПОДРЯДЧИКИ -->
             <TabItem Header="Подрядчики" PreviewMouseLeftButtonDown="OnContractorsTabSelected">
                 <Grid Margin="12">
-
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-
-                    <StackPanel Orientation="Horizontal"
-                                Margin="0,0,0,8">
-
-                        <TextBox materialDesign:HintAssist.Hint="Поиск человека"
-                                 Text="{Binding ContractorSearchText, UpdateSourceTrigger=PropertyChanged}"
-                                 Width="180"
-                                 Margin="0,0,6,0"
-                                 KeyDown="OnContractorSearchKeyDown" />
-
-                        <TextBox materialDesign:HintAssist.Hint="Услуга"
-                                 Text="{Binding ContractorService, UpdateSourceTrigger=PropertyChanged}"
-                                 Width="100"
-                                 Margin="0,0,6,0" />
-
-                        <TextBox materialDesign:HintAssist.Hint="Стоимость"
-                                 Text="{Binding ContractorCost, UpdateSourceTrigger=PropertyChanged}"
-                                 Width="90"
-                                 Margin="0,0,6,0" />
-
-                        <Button Content="Найти"
-                                Command="{Binding SearchContractorsCommand}"
-                                Style="{StaticResource MaterialDesignFlatButton}" />
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <Button Content="Добавить" Command="{Binding AddContractorCommand}" Style="{StaticResource MaterialDesignRaisedButton}" Margin="0,0,8,0"/>
+                        <Button Content="Редактировать" Command="{Binding EditContractorCommand}" Style="{StaticResource MaterialDesignFlatButton}"
+                                IsEnabled="{Binding SelectedContractor, Converter={StaticResource IsNotNullConverter}}"/>
+                        <Button Content="Удалить" Command="{Binding RemoveContractorCommand}" Style="{StaticResource MaterialDesignFlatButton}"
+                                IsEnabled="{Binding SelectedContractor, Converter={StaticResource IsNotNullConverter}}" Margin="8,0,0,0"/>
                     </StackPanel>
-
-                    <ListBox Grid.Row="0"
-                             ItemsSource="{Binding ContractorSearchResults}"
-                             Visibility="{Binding ContractorSearchResults.Count, Converter={StaticResource BoolToVisibilityConverter}}"
-                             MaxHeight="120"
-                             Margin="0,0,0,8">
-
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <Grid>
-                                    <TextBlock Text="{Binding FullName}" />
-
-                                    <Button Content="Добавить"
-                                            HorizontalAlignment="Right"
-                                            Command="{Binding DataContext.AddContractorCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
-                                            CommandParameter="{Binding}" />
-                                </Grid>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-
-                    <DataGrid Grid.Row="1"
-                              ItemsSource="{Binding Contractors}"
-                              AutoGenerateColumns="False"
-                              IsReadOnly="True"
-                              ColumnWidth="*">
-
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding Contractors}" SelectedItem="{Binding SelectedContractor}"
+                              IsSynchronizedWithCurrentItem="True"
+                              AutoGenerateColumns="False" IsReadOnly="True"
+                              CanUserAddRows="False" CanUserResizeColumns="False" MinHeight="200">
                         <DataGrid.Columns>
-
-                            <DataGridTextColumn Header="ФИО"
-                                                Binding="{Binding FullName}"
-                                                Width="*" />
-
-                            <DataGridTextColumn Header="Услуга"
-                                                Binding="{Binding Service}"
-                                                Width="160" />
-
-                            <DataGridTextColumn Header="Стоимость"
-                                                Binding="{Binding Cost, StringFormat='{}{0:N0} ₽'}"
-                                                Width="120" />
-
-                            <DataGridTemplateColumn Header=""
-                                                    Width="60">
-
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Button Content="✕"
-                                                Width="40"
-                                                Height="24"
-                                                Command="{Binding DataContext.RemoveContractorCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                CommandParameter="{Binding}" />
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-
-                            </DataGridTemplateColumn>
-
+                            <DataGridTextColumn Header="ФИО" Binding="{Binding FullName}" Width="*"/>
+                            <DataGridTextColumn Header="Услуга" Binding="{Binding Service}" Width="160"/>
+                            <DataGridTextColumn Header="Стоимость" Binding="{Binding Cost, StringFormat='{}{0:N0} ₽'}" Width="120"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
             </TabItem>
 
-            
-            <!-- ГОСТИ -->
             <!-- ГОСТИ -->
             <TabItem Header="Гости" PreviewMouseLeftButtonDown="OnGuestsTabSelected">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                        <TextBox materialDesign:HintAssist.Hint="Поиск человека"
-                     Text="{Binding GuestSearchText, UpdateSourceTrigger=PropertyChanged}"
-                     Width="250" Margin="0,0,8,0"
-                     KeyDown="OnGuestSearchKeyDown" />
-                        <Button Content="Найти" Command="{Binding SearchGuestsCommand}"
-                    Style="{StaticResource MaterialDesignFlatButton}" />
+                        <Button Content="Добавить" Command="{Binding AddGuestCommand}" Style="{StaticResource MaterialDesignRaisedButton}" Margin="0,0,8,0"/>
+                        <Button Content="Редактировать" Command="{Binding EditGuestCommand}" Style="{StaticResource MaterialDesignFlatButton}"
+                                IsEnabled="{Binding SelectedGuest, Converter={StaticResource IsNotNullConverter}}"/>
+                        <Button Content="Удалить" Command="{Binding RemoveGuestCommand}" Style="{StaticResource MaterialDesignFlatButton}"
+                                IsEnabled="{Binding SelectedGuest, Converter={StaticResource IsNotNullConverter}}" Margin="8,0,0,0"/>
                     </StackPanel>
-
-                    <ListBox Grid.Row="0" ItemsSource="{Binding GuestSearchResults}"
-                 Visibility="{Binding GuestSearchResults.Count, Converter={StaticResource BoolToVisibilityConverter}}"
-                 MaxHeight="120" Margin="0,0,0,8">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <Grid>
-                                    <TextBlock Text="{Binding FullName}" />
-                                    <Button Content="Добавить" HorizontalAlignment="Right"
-                                Command="{Binding DataContext.AddGuestCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
-                                CommandParameter="{Binding}" />
-                                </Grid>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-
-                    <DataGrid Grid.Row="1" ItemsSource="{Binding Guests}" AutoGenerateColumns="False"
-                  ColumnWidth="*">
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding Guests}" SelectedItem="{Binding SelectedGuest}"
+                              IsSynchronizedWithCurrentItem="True"
+                              AutoGenerateColumns="False" IsReadOnly="True"
+                              CanUserAddRows="False" CanUserResizeColumns="False" MinHeight="200">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="ФИО" Binding="{Binding FullName}" Width="*" IsReadOnly="True" />
-                            <DataGridTextColumn Header="Телефон" Binding="{Binding Phone}" Width="120" IsReadOnly="True" />
-                            <DataGridTextColumn Header="Приглашение" Binding="{Binding InvitationStatus, UpdateSourceTrigger=PropertyChanged}" Width="110" />
-                            <DataGridTextColumn Header="Диета" Binding="{Binding DietaryRestrictions, UpdateSourceTrigger=PropertyChanged}" Width="120" />
-                            <DataGridCheckBoxColumn Header="Трансфер" Binding="{Binding TransferNeeded, UpdateSourceTrigger=PropertyChanged}" Width="70" />
-                            <DataGridCheckBoxColumn Header="Проживание" Binding="{Binding AccommodationNeeded, UpdateSourceTrigger=PropertyChanged}" Width="80" />
-                            <DataGridTextColumn Header="Стол" Binding="{Binding TableNumber, UpdateSourceTrigger=PropertyChanged}" Width="60" />
-                            <DataGridTemplateColumn Header="" Width="60">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Button Content="✕" Width="40" Height="24"
-                                    Command="{Binding DataContext.RemoveGuestCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                    CommandParameter="{Binding}" />
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
+                            <DataGridTextColumn Header="ФИО" Binding="{Binding FullName}" Width="*"/>
+                            <DataGridTextColumn Header="Телефон" Binding="{Binding Phone}" Width="120"/>
+                            <DataGridTextColumn Header="Приглашение" Binding="{Binding InvitationStatus}" Width="110"/>
+                            <DataGridTextColumn Header="Диета" Binding="{Binding DietaryRestrictions}" Width="120"/>
+                            <DataGridCheckBoxColumn Header="Трансфер" Binding="{Binding TransferNeeded}" Width="70" IsReadOnly="True"/>
+                            <DataGridCheckBoxColumn Header="Проживание" Binding="{Binding AccommodationNeeded}" Width="80" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Стол" Binding="{Binding TableNumber}" Width="60"/>
                         </DataGrid.Columns>
                     </DataGrid>
-
-                    <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,8,0,0">
-                        <Button Content="Сохранить изменения"
-        Command="{Binding SaveGuestsCommand}"
-        Style="{StaticResource MaterialDesignRaisedButton}" />
-                    </StackPanel>
                 </Grid>
             </TabItem>
 
@@ -449,66 +187,41 @@
             <TabItem Header="Площадка" PreviewMouseLeftButtonDown="OnVenuesTabSelected">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-
-                    <!-- Поиск и добавление -->
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                        <TextBox materialDesign:HintAssist.Hint="Поиск площадки"
-                                 Text="{Binding VenueSearchText, UpdateSourceTrigger=PropertyChanged}"
-                                 Width="200" Margin="0,0,8,0"
-                                 KeyDown="OnVenueSearchKeyDown" />
-                        <TextBox materialDesign:HintAssist.Hint="Аренда"
-                                 Text="{Binding NewVenueRentalCost, UpdateSourceTrigger=PropertyChanged}"
-                                 Width="100" Margin="0,0,6,0" />
-                        <TextBox materialDesign:HintAssist.Hint="Депозит"
-                                 Text="{Binding NewVenueDeposit, UpdateSourceTrigger=PropertyChanged}"
-                                 Width="100" Margin="0,0,6,0" />
-                        <DatePicker SelectedDate="{Binding NewVenueEventDate}" Width="120" Margin="0,0,6,0" />
-                        <Button Content="Найти" Command="{Binding SearchVenuesCommand}"
-                                Style="{StaticResource MaterialDesignFlatButton}" />
+                        <TextBox Text="{Binding VenueSearchText, UpdateSourceTrigger=PropertyChanged}" materialDesign:HintAssist.Hint="Поиск площадки" Width="200" Margin="0,0,8,0" KeyDown="OnVenueSearchKeyDown"/>
+                        <TextBox Text="{Binding NewVenueRentalCost, UpdateSourceTrigger=PropertyChanged}" materialDesign:HintAssist.Hint="Аренда" Width="100" Margin="0,0,6,0"/>
+                        <TextBox Text="{Binding NewVenueDeposit, UpdateSourceTrigger=PropertyChanged}" materialDesign:HintAssist.Hint="Депозит" Width="100" Margin="0,0,6,0"/>
+                        <DatePicker SelectedDate="{Binding NewVenueEventDate}" Width="120" Margin="0,0,6,0"/>
+                        <Button Content="Найти" Command="{Binding SearchVenuesCommand}" Style="{StaticResource MaterialDesignFlatButton}"/>
                     </StackPanel>
-
-                    <!-- Результаты поиска -->
                     <ListBox Grid.Row="0" ItemsSource="{Binding VenueSearchResults}"
-                             Visibility="{Binding VenueSearchResults.Count, Converter={StaticResource BoolToVisibilityConverter}}"
-                             MaxHeight="120" Margin="0,0,0,8">
+                             Visibility="{Binding VenueSearchResults.Count, Converter={StaticResource BoolToVisibilityConverter}}" MaxHeight="120" Margin="0,0,0,8">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <Grid>
                                     <StackPanel>
-                                        <TextBlock Text="{Binding Name}" FontWeight="Bold" />
-                                        <TextBlock Text="{Binding City}" />
+                                        <TextBlock Text="{Binding Name}" FontWeight="Bold"/>
+                                        <TextBlock Text="{Binding City}"/>
                                     </StackPanel>
                                     <Button Content="Добавить" HorizontalAlignment="Right"
-                                            Command="{Binding DataContext.AddVenueCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
-                                            CommandParameter="{Binding}" />
+                                            Command="{Binding DataContext.AddVenueCommand, RelativeSource={RelativeSource AncestorType=ListBox}}" CommandParameter="{Binding}"/>
                                 </Grid>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
-
-                    <!-- Список площадок -->
                     <DataGrid Grid.Row="1" ItemsSource="{Binding Venues}" AutoGenerateColumns="False" IsReadOnly="True"
-                              ColumnWidth="*">
+                              CanUserAddRows="False" CanUserResizeColumns="False" MinHeight="200">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Название" Binding="{Binding VenueName}" Width="*" />
-                            <DataGridTextColumn Header="Адрес" Binding="{Binding Address}" Width="*" />
-                            <DataGridTextColumn Header="Город" Binding="{Binding City}" Width="100" />
-                            <DataGridTextColumn Header="Аренда" Binding="{Binding RentalCost, StringFormat='{}{0:N0} ₽'}" Width="110" />
-                            <DataGridTextColumn Header="Депозит" Binding="{Binding DepositAmount, StringFormat='{}{0:N0} ₽'}" Width="110" />
-                            <DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="100" />
-                            <DataGridTextColumn Header="Дата" Binding="{Binding EventDate, StringFormat='{}{0:dd.MM.yyyy}'}" Width="100" />
-                            <DataGridTemplateColumn Header="" Width="60">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Button Content="✕" Width="40" Height="24"
-                                                Command="{Binding DataContext.RemoveVenueCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                CommandParameter="{Binding}" />
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
+                            <DataGridTextColumn Header="Название" Binding="{Binding VenueName}" Width="*"/>
+                            <DataGridTextColumn Header="Адрес" Binding="{Binding Address}" Width="*"/>
+                            <DataGridTextColumn Header="Город" Binding="{Binding City}" Width="100"/>
+                            <DataGridTextColumn Header="Аренда" Binding="{Binding RentalCost, StringFormat='{}{0:N0} ₽'}" Width="110"/>
+                            <DataGridTextColumn Header="Депозит" Binding="{Binding DepositAmount, StringFormat='{}{0:N0} ₽'}" Width="110"/>
+                            <DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="100"/>
+                            <DataGridTextColumn Header="Дата" Binding="{Binding EventDate, StringFormat='{}{0:dd.MM.yyyy}'}" Width="100"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
@@ -517,38 +230,33 @@
             <!-- ТАЙМЛАЙН -->
             <TabItem Header="Таймлайн" PreviewMouseLeftButtonDown="OnTimelineTabSelected">
                 <Grid Margin="12">
-
-                    <DataGrid ItemsSource="{Binding TimelineEvents}"
-                              AutoGenerateColumns="False"
-                              IsReadOnly="True"
-                              ColumnWidth="*">
-
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Border Background="{DynamicResource MaterialDesignPaper}" Padding="12" CornerRadius="4" Margin="0,0,0,12">
+                        <StackPanel>
+                            <TextBlock Text="Новое событие" Style="{StaticResource MaterialDesignSubtitle1TextBlock}" Margin="0,0,0,8"/>
+                            <WrapPanel>
+                                <TextBox Text="{Binding NewEventStartTime, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}" materialDesign:HintAssist.Hint="Начало" Width="160" Margin="0,0,8,8"/>
+                                <TextBox Text="{Binding NewEventEndTime, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}" materialDesign:HintAssist.Hint="Конец" Width="160" Margin="0,0,8,8"/>
+                                <TextBox Text="{Binding NewEventDescription, UpdateSourceTrigger=PropertyChanged}" materialDesign:HintAssist.Hint="Описание" Width="180" Margin="0,0,8,8"/>
+                                <TextBox Text="{Binding NewEventLocation, UpdateSourceTrigger=PropertyChanged}" materialDesign:HintAssist.Hint="Локация" Width="140" Margin="0,0,8,8"/>
+                                <ComboBox ItemsSource="{Binding Managers}" SelectedItem="{Binding NewEventResponsible}" DisplayMemberPath="Person.FullName" Width="140" Margin="0,0,8,8" materialDesign:HintAssist.Hint="Ответственный"/>
+                                <TextBox Text="{Binding NewEventNotes, UpdateSourceTrigger=PropertyChanged}" materialDesign:HintAssist.Hint="Заметки" Width="160" Margin="0,0,8,8"/>
+                                <Button Content="Добавить" Command="{Binding AddTimelineEventCommand}" Style="{StaticResource MaterialDesignRaisedButton}" VerticalAlignment="Center"/>
+                            </WrapPanel>
+                        </StackPanel>
+                    </Border>
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding TimelineEvents}" AutoGenerateColumns="False" IsReadOnly="True"
+                              CanUserAddRows="False" CanUserResizeColumns="False" MinHeight="200">
                         <DataGrid.Columns>
-
-                            <DataGridTextColumn Header="Начало"
-                                                Binding="{Binding StartTime, StringFormat='{}{0:HH:mm}'}"
-                                                Width="70" />
-
-                            <DataGridTextColumn Header="Конец"
-                                                Binding="{Binding EndTime, StringFormat='{}{0:HH:mm}'}"
-                                                Width="70" />
-
-                            <DataGridTextColumn Header="Описание"
-                                                Binding="{Binding Description}"
-                                                Width="*" />
-
-                            <DataGridTextColumn Header="Локация"
-                                                Binding="{Binding Location}"
-                                                Width="140" />
-
-                            <DataGridTextColumn Header="Ответственный"
-                                                Binding="{Binding ResponsiblePerson}"
-                                                Width="140" />
-
-                            <DataGridTextColumn Header="Заметки"
-                                                Binding="{Binding Notes}"
-                                                Width="160" />
-
+                            <DataGridTextColumn Header="Начало" Binding="{Binding StartTime, StringFormat='{}{0:dd.MM HH:mm}'}" Width="110"/>
+                            <DataGridTextColumn Header="Конец" Binding="{Binding EndTime, StringFormat='{}{0:dd.MM HH:mm}'}" Width="110"/>
+                            <DataGridTextColumn Header="Описание" Binding="{Binding Description}" Width="*"/>
+                            <DataGridTextColumn Header="Локация" Binding="{Binding Location}" Width="140"/>
+                            <DataGridTextColumn Header="Ответственный" Binding="{Binding ResponsiblePerson}" Width="140"/>
+                            <DataGridTextColumn Header="Заметки" Binding="{Binding Notes}" Width="160"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
@@ -557,79 +265,33 @@
             <!-- ФИНАНСЫ -->
             <TabItem Header="Финансы" PreviewMouseLeftButtonDown="OnFinanceTabSelected">
                 <Grid Margin="12">
-
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-
-                    <Border Background="{DynamicResource MaterialDesignPaper}"
-                            Padding="12"
-                            CornerRadius="4"
-                            Margin="0,0,0,12">
-
+                    <Border Background="{DynamicResource MaterialDesignPaper}" Padding="12" CornerRadius="4" Margin="0,0,0,12">
                         <WrapPanel>
-
-                            <TextBlock Text="{Binding FinanceSummary.BudgetTotal, StringFormat='Бюджет: {0:N0} ₽'}"
-                                       Margin="0,0,20,0"
-                                       FontWeight="Bold" />
-
-                            <TextBlock Text="{Binding FinanceSummary.PaidByClient, StringFormat='Оплачено клиентом: {0:N0} ₽'}"
-                                       Margin="0,0,20,0" />
-
-                            <TextBlock Text="{Binding FinanceSummary.TotalActual, StringFormat='Расходы: {0:N0} ₽'}"
-                                       Margin="0,0,20,0" />
-
-                            <TextBlock Text="{Binding FinanceSummary.Remainder, StringFormat='Остаток: {0:N0} ₽'}"
-                                       Margin="0,0,20,0"
-                                       Foreground="Green" />
-
-                            <TextBlock Text="{Binding FinanceSummary.Profit, StringFormat='Прибыль: {0:N0} ₽'}"
-                                       FontWeight="Bold"
-                                       Foreground="DarkGreen" />
-
+                            <TextBlock Text="{Binding FinanceSummary.BudgetTotal, StringFormat='Бюджет: {0:N0} ₽'}" Margin="0,0,20,0" FontWeight="Bold"/>
+                            <TextBlock Text="{Binding FinanceSummary.PaidByClient, StringFormat='Оплачено клиентом: {0:N0} ₽'}" Margin="0,0,20,0"/>
+                            <TextBlock Text="{Binding FinanceSummary.TotalActual, StringFormat='Расходы: {0:N0} ₽'}" Margin="0,0,20,0"/>
+                            <TextBlock Text="{Binding FinanceSummary.Remainder, StringFormat='Остаток: {0:N0} ₽'}" Margin="0,0,20,0" Foreground="Green"/>
+                            <TextBlock Text="{Binding FinanceSummary.Profit, StringFormat='Прибыль: {0:N0} ₽'}" FontWeight="Bold" Foreground="DarkGreen"/>
                         </WrapPanel>
                     </Border>
-
-                    <DataGrid Grid.Row="1"
-                              ItemsSource="{Binding FinanceTransactions}"
-                              AutoGenerateColumns="False"
-                              IsReadOnly="True"
-                              ColumnWidth="*">
-
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding FinanceTransactions}" AutoGenerateColumns="False" IsReadOnly="True"
+                              CanUserAddRows="False" CanUserResizeColumns="False" MinHeight="200">
                         <DataGrid.Columns>
-
-                            <DataGridTextColumn Header="Тип"
-                                                Binding="{Binding Type}"
-                                                Width="140" />
-
-                            <DataGridTextColumn Header="Номер"
-                                                Binding="{Binding Number}"
-                                                Width="120" />
-
-                            <DataGridTextColumn Header="Контрагент"
-                                                Binding="{Binding Counterparty}"
-                                                Width="*" />
-
-                            <DataGridTextColumn Header="Сумма"
-                                                Binding="{Binding Amount, StringFormat='{}{0:N0} ₽'}"
-                                                Width="120" />
-
-                            <DataGridTextColumn Header="Статус"
-                                                Binding="{Binding Status}"
-                                                Width="100" />
-
-                            <DataGridTextColumn Header="Дата"
-                                                Binding="{Binding Date, StringFormat='{}{0:dd.MM.yyyy}'}"
-                                                Width="100" />
-
+                            <DataGridTextColumn Header="Тип" Binding="{Binding Type}" Width="140"/>
+                            <DataGridTextColumn Header="Номер" Binding="{Binding Number}" Width="120"/>
+                            <DataGridTextColumn Header="Контрагент" Binding="{Binding Counterparty}" Width="*"/>
+                            <DataGridTextColumn Header="Сумма" Binding="{Binding Amount, StringFormat='{}{0:N0} ₽'}" Width="120"/>
+                            <DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="100"/>
+                            <DataGridTextColumn Header="Дата" Binding="{Binding Date, StringFormat='{}{0:dd.MM.yyyy}'}" Width="100"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
             </TabItem>
 
         </TabControl>
-
     </Grid>
-
 </UserControl>

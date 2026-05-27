@@ -29,28 +29,16 @@ public partial class ProjectDetailsView : UserControl
             vm.LoadFinanceCommand.Execute(null);
     }
 
-    private void OnClientSearchKeyDown(object sender, KeyEventArgs e)
-    {
-        if (e.Key == Key.Enter && DataContext is ProjectDetailsViewModel vm)
-            vm.SearchClientsCommand.Execute(null);
-    }
+  
 
-    private void OnContractorSearchKeyDown(object sender, KeyEventArgs e)
-    {
-        if (e.Key == Key.Enter && DataContext is ProjectDetailsViewModel vm)
-            vm.SearchContractorsCommand.Execute(null);
-    }
+   
     private void OnGuestsTabSelected(object sender, MouseButtonEventArgs e)
     {
         if (DataContext is ProjectDetailsViewModel vm)
             vm.LoadGuestsCommand.Execute(null);
     }
 
-    private void OnGuestSearchKeyDown(object sender, KeyEventArgs e)
-    {
-        if (e.Key == Key.Enter && DataContext is ProjectDetailsViewModel vm)
-            vm.SearchGuestsCommand.Execute(null);
-    }
+    
     private void OnVenuesTabSelected(object sender, MouseButtonEventArgs e)
     {
         if (DataContext is ProjectDetailsViewModel vm)
