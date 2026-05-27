@@ -1,13 +1,49 @@
 ﻿<UserControl x:Class="WeddingAgency.Views.Venues.VenuesView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
 
-    <Grid Margin="24">
-        <TextBlock Text="Площадки"
-                   Style="{StaticResource MaterialDesignHeadline4TextBlock}"
-                   VerticalAlignment="Center"
-                   HorizontalAlignment="Center"
-                   Opacity="0.5" />
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Панель добавления -->
+        <Border Background="{DynamicResource MaterialDesignPaper}" Padding="16" CornerRadius="6" Margin="0,0,0,16">
+            <StackPanel>
+                <TextBlock Text="Добавить / Редактировать площадку" Style="{StaticResource MaterialDesignSubtitle1TextBlock}" Margin="0,0,0,8"/>
+                <WrapPanel>
+                    <TextBox Text="{Binding NewName, UpdateSourceTrigger=PropertyChanged}" materialDesign:HintAssist.Hint="Название" Width="180" Margin="0,0,8,8"/>
+                    <TextBox Text="{Binding NewCity, UpdateSourceTrigger=PropertyChanged}" materialDesign:HintAssist.Hint="Город" Width="120" Margin="0,0,8,8"/>
+                    <TextBox Text="{Binding NewAddress, UpdateSourceTrigger=PropertyChanged}" materialDesign:HintAssist.Hint="Адрес" Width="200" Margin="0,0,8,8"/>
+                    <TextBox Text="{Binding NewRentalCost, UpdateSourceTrigger=PropertyChanged}" materialDesign:HintAssist.Hint="Аренда" Width="100" Margin="0,0,8,8"/>
+                    <TextBox Text="{Binding NewDeposit, UpdateSourceTrigger=PropertyChanged}" materialDesign:HintAssist.Hint="Депозит" Width="100" Margin="0,0,8,8"/>
+                    <Button Content="Добавить" Command="{Binding AddVenueCommand}" Style="{StaticResource MaterialDesignRaisedButton}" Margin="0,0,8,8"/>
+                    <Button Content="Сохранить" Command="{Binding UpdateVenueCommand}" Style="{StaticResource MaterialDesignFlatButton}" Margin="0,0,8,8"
+                            IsEnabled="{Binding SelectedVenue, Converter={StaticResource IsNotNullConverter}}"/>
+                    <Button Content="Удалить" Command="{Binding DeleteVenueCommand}" Style="{StaticResource MaterialDesignFlatButton}" Margin="0,0,8,8"
+                            IsEnabled="{Binding SelectedVenue, Converter={StaticResource IsNotNullConverter}}"/>
+                </WrapPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- Поиск -->
+        <TextBox Grid.Row="1" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                 materialDesign:HintAssist.Hint="Поиск по названию, городу или адресу" Margin="0,0,0,8"/>
+
+        <!-- Таблица -->
+        <DataGrid Grid.Row="2" ItemsSource="{Binding Venues}" SelectedItem="{Binding SelectedVenue, Mode=TwoWay}"
+                  AutoGenerateColumns="False" IsReadOnly="True"
+                  CanUserAddRows="False" CanUserResizeColumns="False" MinHeight="200">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Название" Binding="{Binding Name}" Width="*"/>
+                <DataGridTextColumn Header="Город" Binding="{Binding City}" Width="120"/>
+                <DataGridTextColumn Header="Адрес" Binding="{Binding Address}" Width="*"/>
+                <DataGridTextColumn Header="Аренда" Binding="{Binding RentalCost, StringFormat='{}{0:N0} ₽'}" Width="120"/>
+                <DataGridTextColumn Header="Депозит" Binding="{Binding FoodDeposit, StringFormat='{}{0:N0} ₽'}" Width="120"/>
+            </DataGrid.Columns>
+        </DataGrid>
     </Grid>
-
 </UserControl>

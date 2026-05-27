@@ -64,6 +64,11 @@ public partial class App : Application
                 services.AddScoped<IProjectGuestsService, ProjectGuestsService>();
                 services.AddScoped<IProjectVenueService, ProjectVenueService>();
                 services.AddScoped<IProjectTimelineService, ProjectTimelineService>();
+                services.AddScoped<IVenueCatalogService, VenueCatalogService>();
+                services.AddScoped<IFinanceOverviewService, FinanceOverviewService>();
+                services.AddTransient<FinanceViewModel>();
+                services.AddTransient<ContractorsViewModel>();
+                services.AddScoped<IDashboardService, DashboardService>();
                 // Windows
                 services.AddTransient<LoginWindow>();
                 services.AddTransient<ChangePasswordWindow>();
@@ -75,6 +80,7 @@ public partial class App : Application
                 services.AddTransient<SelectPersonWindow>();
                 services.AddTransient<AddGuestWindow>();
                 services.AddTransient<AddContractorWindow>();
+                services.AddTransient<SelectVenueWindow>();
             })
             .Build();
     }

@@ -190,30 +190,10 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                        <TextBox Text="{Binding VenueSearchText, UpdateSourceTrigger=PropertyChanged}" materialDesign:HintAssist.Hint="Поиск площадки" Width="200" Margin="0,0,8,0" KeyDown="OnVenueSearchKeyDown"/>
-                        <TextBox Text="{Binding NewVenueRentalCost, UpdateSourceTrigger=PropertyChanged}" materialDesign:HintAssist.Hint="Аренда" Width="100" Margin="0,0,6,0"/>
-                        <TextBox Text="{Binding NewVenueDeposit, UpdateSourceTrigger=PropertyChanged}" materialDesign:HintAssist.Hint="Депозит" Width="100" Margin="0,0,6,0"/>
-                        <DatePicker SelectedDate="{Binding NewVenueEventDate}" Width="120" Margin="0,0,6,0"/>
-                        <Button Content="Найти" Command="{Binding SearchVenuesCommand}" Style="{StaticResource MaterialDesignFlatButton}"/>
-                    </StackPanel>
-                    <ListBox Grid.Row="0" ItemsSource="{Binding VenueSearchResults}"
-                             Visibility="{Binding VenueSearchResults.Count, Converter={StaticResource BoolToVisibilityConverter}}" MaxHeight="120" Margin="0,0,0,8">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <Grid>
-                                    <StackPanel>
-                                        <TextBlock Text="{Binding Name}" FontWeight="Bold"/>
-                                        <TextBlock Text="{Binding City}"/>
-                                    </StackPanel>
-                                    <Button Content="Добавить" HorizontalAlignment="Right"
-                                            Command="{Binding DataContext.AddVenueCommand, RelativeSource={RelativeSource AncestorType=ListBox}}" CommandParameter="{Binding}"/>
-                                </Grid>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
+                    <Button Content="Добавить" Command="{Binding AddVenueCommand}" Style="{StaticResource MaterialDesignRaisedButton}"
+                HorizontalAlignment="Left" Margin="0,0,0,8"/>
                     <DataGrid Grid.Row="1" ItemsSource="{Binding Venues}" AutoGenerateColumns="False" IsReadOnly="True"
-                              CanUserAddRows="False" CanUserResizeColumns="False" MinHeight="200">
+                  CanUserAddRows="False" CanUserResizeColumns="False" MinHeight="200">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Название" Binding="{Binding VenueName}" Width="*"/>
                             <DataGridTextColumn Header="Адрес" Binding="{Binding Address}" Width="*"/>
@@ -222,6 +202,14 @@
                             <DataGridTextColumn Header="Депозит" Binding="{Binding DepositAmount, StringFormat='{}{0:N0} ₽'}" Width="110"/>
                             <DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="100"/>
                             <DataGridTextColumn Header="Дата" Binding="{Binding EventDate, StringFormat='{}{0:dd.MM.yyyy}'}" Width="100"/>
+                            <DataGridTemplateColumn Header="" Width="50">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Content="✕" Width="30" Height="24"
+                                    Command="{Binding DataContext.RemoveVenueCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
