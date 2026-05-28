@@ -38,34 +38,40 @@
    21. [WeddingAgencyContext.cs](#weddingagencycontextcs)
 8. [Services](#services)
    1. [AuthService.cs](#authservicecs)
-   2. [IAuthService.cs](#iauthservicecs)
-   3. [INavigationAware.cs](#inavigationawarecs)
-   4. [INavigationService.cs](#inavigationservicecs)
-   5. [IPeopleService.cs](#ipeopleservicecs)
-   6. [IProjectClientsService.cs](#iprojectclientsservicecs)
-   7. [IProjectContractorsService.cs](#iprojectcontractorsservicecs)
-   8. [IProjectDetailsService.cs](#iprojectdetailsservicecs)
-   9. [IProjectFinanceService.cs](#iprojectfinanceservicecs)
-   10. [IProjectGuestsService.cs](#iprojectguestsservicecs)
-   11. [IProjectOverviewService.cs](#iprojectoverviewservicecs)
-   12. [IProjectPeopleService.cs](#iprojectpeopleservicecs)
-   13. [IProjectService.cs](#iprojectservicecs)
-   14. [IProjectTimelineService.cs](#iprojecttimelineservicecs)
-   15. [IProjectVenueService.cs](#iprojectvenueservicecs)
-   16. [IUserManagementService.cs](#iusermanagementservicecs)
-   17. [NavigationService.cs](#navigationservicecs)
-   18. [PeopleService.cs](#peopleservicecs)
-   19. [ProjectClientsService.cs](#projectclientsservicecs)
-   20. [ProjectContractorsService.cs](#projectcontractorsservicecs)
-   21. [ProjectDetailsService.cs](#projectdetailsservicecs)
-   22. [ProjectFinanceService.cs](#projectfinanceservicecs)
-   23. [ProjectGuestsService.cs](#projectguestsservicecs)
-   24. [ProjectOverviewService.cs](#projectoverviewservicecs)
-   25. [ProjectPeopleService.cs](#projectpeopleservicecs)
-   26. [ProjectService.cs](#projectservicecs)
-   27. [ProjectTimelineService.cs](#projecttimelineservicecs)
-   28. [ProjectVenueService.cs](#projectvenueservicecs)
-   29. [UserManagementService.cs](#usermanagementservicecs)
+   2. [DashboardService.cs](#dashboardservicecs)
+   3. [FinanceOverviewService.cs](#financeoverviewservicecs)
+   4. [IAuthService.cs](#iauthservicecs)
+   5. [IDashboardService.cs](#idashboardservicecs)
+   6. [IFinanceOverviewService.cs](#ifinanceoverviewservicecs)
+   7. [INavigationAware.cs](#inavigationawarecs)
+   8. [INavigationService.cs](#inavigationservicecs)
+   9. [IPeopleService.cs](#ipeopleservicecs)
+   10. [IProjectClientsService.cs](#iprojectclientsservicecs)
+   11. [IProjectContractorsService.cs](#iprojectcontractorsservicecs)
+   12. [IProjectDetailsService.cs](#iprojectdetailsservicecs)
+   13. [IProjectFinanceService.cs](#iprojectfinanceservicecs)
+   14. [IProjectGuestsService.cs](#iprojectguestsservicecs)
+   15. [IProjectOverviewService.cs](#iprojectoverviewservicecs)
+   16. [IProjectPeopleService.cs](#iprojectpeopleservicecs)
+   17. [IProjectService.cs](#iprojectservicecs)
+   18. [IProjectTimelineService.cs](#iprojecttimelineservicecs)
+   19. [IProjectVenueService.cs](#iprojectvenueservicecs)
+   20. [IUserManagementService.cs](#iusermanagementservicecs)
+   21. [IVenueCatalogService.cs](#ivenuecatalogservicecs)
+   22. [NavigationService.cs](#navigationservicecs)
+   23. [PeopleService.cs](#peopleservicecs)
+   24. [ProjectClientsService.cs](#projectclientsservicecs)
+   25. [ProjectContractorsService.cs](#projectcontractorsservicecs)
+   26. [ProjectDetailsService.cs](#projectdetailsservicecs)
+   27. [ProjectFinanceService.cs](#projectfinanceservicecs)
+   28. [ProjectGuestsService.cs](#projectguestsservicecs)
+   29. [ProjectOverviewService.cs](#projectoverviewservicecs)
+   30. [ProjectPeopleService.cs](#projectpeopleservicecs)
+   31. [ProjectService.cs](#projectservicecs)
+   32. [ProjectTimelineService.cs](#projecttimelineservicecs)
+   33. [ProjectVenueService.cs](#projectvenueservicecs)
+   34. [UserManagementService.cs](#usermanagementservicecs)
+   35. [VenueCatalogService.cs](#venuecatalogservicecs)
 9. [Themes](#themes)
    1. [MaterialTheme.xaml](#materialthemexaml)
 10. [Viewmodels](#viewmodels)
@@ -134,6 +140,8 @@
    14. [MainWindow.xaml.cs](#mainwindowxamlcs)
    15. [SelectPersonWindow.xaml](#selectpersonwindowxaml)
    16. [SelectPersonWindow.xaml.cs](#selectpersonwindowxamlcs)
+   17. [SelectVenueWindow.xaml](#selectvenuewindowxaml)
+   18. [SelectVenueWindow.xaml.cs](#selectvenuewindowxamlcs)
 
 ## FILE 1: App.xaml
 
@@ -265,6 +273,11 @@ public partial class App : Application
                 services.AddScoped<IProjectGuestsService, ProjectGuestsService>();
                 services.AddScoped<IProjectVenueService, ProjectVenueService>();
                 services.AddScoped<IProjectTimelineService, ProjectTimelineService>();
+                services.AddScoped<IVenueCatalogService, VenueCatalogService>();
+                services.AddScoped<IFinanceOverviewService, FinanceOverviewService>();
+                services.AddTransient<FinanceViewModel>();
+                services.AddTransient<ContractorsViewModel>();
+                services.AddScoped<IDashboardService, DashboardService>();
                 // Windows
                 services.AddTransient<LoginWindow>();
                 services.AddTransient<ChangePasswordWindow>();
@@ -276,6 +289,7 @@ public partial class App : Application
                 services.AddTransient<SelectPersonWindow>();
                 services.AddTransient<AddGuestWindow>();
                 services.AddTransient<AddContractorWindow>();
+                services.AddTransient<SelectVenueWindow>();
             })
             .Build();
     }
@@ -2160,7 +2174,166 @@ public class AuthService : IAuthService
 
 ---
 
-## FILE 33: IAuthService.cs
+## FILE 33: DashboardService.cs
+
+<a id='dashboardservicecs'></a>
+
+```csharp
+﻿using Microsoft.EntityFrameworkCore;
+using WeddingAgency.Domain.Projects;
+using WeddingAgency.Models;
+
+namespace WeddingAgency.Services;
+
+public class DashboardService : IDashboardService
+{
+    private readonly WeddingAgencyContext _context;
+
+    public DashboardService(WeddingAgencyContext context)
+    {
+        _context = context;
+    }
+
+    public async Task<DashboardData> GetDashboardDataAsync()
+    {
+        var projects = await _context.Projects
+            .Include(p => p.ProjectPeople).ThenInclude(pp => pp.Person)
+            .ToListAsync();
+
+        var activeProjects = projects.Where(p => p.Status != "Закрыт").ToList();
+
+        var totalClients = projects
+            .SelectMany(p => p.ProjectPeople)
+            .Count(pp => pp.Role == ProjectRoles.Client);
+
+        var totalGuests = projects
+            .SelectMany(p => p.ProjectPeople)
+            .Count(pp => pp.Role == ProjectRoles.Guest);
+
+        var totalContractors = projects
+            .SelectMany(p => p.ProjectPeople)
+            .Count(pp => pp.Role == ProjectRoles.Contractor);
+
+        var totalBudget = projects.Sum(p => p.BudgetTotal);
+        var totalPaid = await _context.Invoices
+            .Where(i => i.Status == "Оплачен")
+            .SumAsync(i => i.Amount);
+
+        var upcoming = activeProjects
+            .Where(p => p.WeddingDate.HasValue && p.WeddingDate.Value >= DateOnly.FromDateTime(DateTime.Today))
+            .OrderBy(p => p.WeddingDate)
+            .Take(5)
+            .Select(p => new UpcomingWedding
+            {
+                ProjectNumber = p.ProjectNumber,
+                WeddingDate = p.WeddingDate,
+                City = p.LocationCity,
+                GuestCount = p.GuestCountMin,
+                ClientNames = string.Join(", ", p.ProjectPeople
+                    .Where(pp => pp.Role == ProjectRoles.Client)
+                    .Select(pp => pp.Person.FullName))
+            })
+            .ToList();
+
+        return new DashboardData
+        {
+            ActiveProjects = activeProjects.Count,
+            TotalClients = totalClients,
+            TotalGuests = totalGuests,
+            TotalContractors = totalContractors,
+            TotalBudget = totalBudget,
+            TotalPaid = totalPaid,
+            UpcomingWeddings = upcoming
+        };
+    }
+}
+```
+
+---
+
+## FILE 34: FinanceOverviewService.cs
+
+<a id='financeoverviewservicecs'></a>
+
+```csharp
+﻿using Microsoft.EntityFrameworkCore;
+using WeddingAgency.Models;
+using WeddingAgency.ViewModels.ProjectDetails;
+
+namespace WeddingAgency.Services;
+
+public class FinanceOverviewService : IFinanceOverviewService
+{
+    private readonly WeddingAgencyContext _context;
+
+    public FinanceOverviewService(WeddingAgencyContext context)
+    {
+        _context = context;
+    }
+
+    public async Task<FinanceSummaryModel> GetOverallSummaryAsync()
+    {
+        var projects = await _context.Projects.ToListAsync();
+        var invoices = await _context.Invoices.ToListAsync();
+        var contracts = await _context.ContractsContractors.ToListAsync();
+        var estimates = await _context.Estimates.Include(e => e.EstimateItems).ToListAsync();
+
+        return new FinanceSummaryModel
+        {
+            BudgetTotal = projects.Sum(p => p.BudgetTotal),
+            TotalPlanned = estimates.Sum(e => e.TotalPlanned),
+            TotalActual = estimates.Sum(e => e.TotalActual),
+            PaidByClient = invoices.Where(i => i.Status == "Оплачен").Sum(i => i.Amount),
+            PaidToContractors = contracts.Where(c => c.Status == "Оплачен").Sum(c => c.ServiceCost)
+        };
+    }
+
+    public async Task<List<FinanceTransactionModel>> GetAllTransactionsAsync()
+    {
+        var transactions = new List<FinanceTransactionModel>();
+
+        var invoices = await _context.Invoices.Include(i => i.Counterparty).ToListAsync();
+        transactions.AddRange(invoices.Select(i => new FinanceTransactionModel
+        {
+            Type = "Счёт",
+            Number = i.InvoiceNumber,
+            Counterparty = i.Counterparty?.FullName,
+            Amount = i.Amount,
+            Status = i.Status,
+            Date = i.DueDate
+        }));
+
+        var contracts = await _context.ContractsContractors
+            .Include(c => c.ContractorPerson).ThenInclude(pp => pp.Person)
+            .ToListAsync();
+        transactions.AddRange(contracts.Select(c => new FinanceTransactionModel
+        {
+            Type = "Договор с подрядчиком",
+            Number = c.ContractNumber,
+            Counterparty = c.ContractorPerson?.Person?.FullName,
+            Amount = c.ServiceCost,
+            Status = c.Status,
+            Date = c.SignedDate
+        }));
+
+        var acts = await _context.ActsCompletions.ToListAsync();
+        transactions.AddRange(acts.Select(a => new FinanceTransactionModel
+        {
+            Type = "Акт",
+            Number = a.ActNumber,
+            Amount = a.TotalAmount,
+            Status = a.SignedByClient == true ? "Подписан" : "Не подписан",
+            Date = a.SignedDate
+        }));
+
+        return transactions.OrderByDescending(t => t.Date).ToList();
+    }
+}
+```
+
+---
+
+## FILE 35: IAuthService.cs
 
 <a id='iauthservicecs'></a>
 
@@ -2179,7 +2352,61 @@ public interface IAuthService
 
 ---
 
-## FILE 34: INavigationAware.cs
+## FILE 36: IDashboardService.cs
+
+<a id='idashboardservicecs'></a>
+
+```csharp
+﻿namespace WeddingAgency.Services;
+
+public interface IDashboardService
+{
+    Task<DashboardData> GetDashboardDataAsync();
+}
+
+public class DashboardData
+{
+    public int ActiveProjects { get; init; }
+    public int TotalClients { get; init; }
+    public int TotalGuests { get; init; }
+    public int TotalContractors { get; init; }
+    public decimal? TotalBudget { get; init; }
+    public decimal? TotalPaid { get; init; }
+    public List<UpcomingWedding> UpcomingWeddings { get; init; } = new();
+}
+
+public class UpcomingWedding
+{
+    public string? ProjectNumber { get; init; }
+    public DateOnly? WeddingDate { get; init; }
+    public string? ClientNames { get; init; }
+    public string? City { get; init; }
+    public int? GuestCount { get; init; }
+    public int DaysLeft => WeddingDate.HasValue ? (WeddingDate.Value.ToDateTime(TimeOnly.MinValue) - DateTime.Today).Days : 0;
+}
+```
+
+---
+
+## FILE 37: IFinanceOverviewService.cs
+
+<a id='ifinanceoverviewservicecs'></a>
+
+```csharp
+﻿using WeddingAgency.ViewModels.ProjectDetails;
+
+namespace WeddingAgency.Services;
+
+public interface IFinanceOverviewService
+{
+    Task<FinanceSummaryModel> GetOverallSummaryAsync();
+    Task<List<FinanceTransactionModel>> GetAllTransactionsAsync();
+}
+```
+
+---
+
+## FILE 38: INavigationAware.cs
 
 <a id='inavigationawarecs'></a>
 
@@ -2194,7 +2421,7 @@ public interface INavigationAware
 
 ---
 
-## FILE 35: INavigationService.cs
+## FILE 39: INavigationService.cs
 
 <a id='inavigationservicecs'></a>
 
@@ -2214,7 +2441,7 @@ public interface INavigationService
 
 ---
 
-## FILE 36: IPeopleService.cs
+## FILE 40: IPeopleService.cs
 
 <a id='ipeopleservicecs'></a>
 
@@ -2237,7 +2464,7 @@ public interface IPeopleService
 
 ---
 
-## FILE 37: IProjectClientsService.cs
+## FILE 41: IProjectClientsService.cs
 
 <a id='iprojectclientsservicecs'></a>
 
@@ -2254,7 +2481,7 @@ public interface IProjectClientsService
 
 ---
 
-## FILE 38: IProjectContractorsService.cs
+## FILE 42: IProjectContractorsService.cs
 
 <a id='iprojectcontractorsservicecs'></a>
 
@@ -2271,7 +2498,7 @@ public interface IProjectContractorsService
 
 ---
 
-## FILE 39: IProjectDetailsService.cs
+## FILE 43: IProjectDetailsService.cs
 
 <a id='iprojectdetailsservicecs'></a>
 
@@ -2288,7 +2515,7 @@ public interface IProjectDetailsService
 
 ---
 
-## FILE 40: IProjectFinanceService.cs
+## FILE 44: IProjectFinanceService.cs
 
 <a id='iprojectfinanceservicecs'></a>
 
@@ -2306,7 +2533,7 @@ public interface IProjectFinanceService
 
 ---
 
-## FILE 41: IProjectGuestsService.cs
+## FILE 45: IProjectGuestsService.cs
 
 <a id='iprojectguestsservicecs'></a>
 
@@ -2326,7 +2553,7 @@ public interface IProjectGuestsService
 
 ---
 
-## FILE 42: IProjectOverviewService.cs
+## FILE 46: IProjectOverviewService.cs
 
 <a id='iprojectoverviewservicecs'></a>
 
@@ -2343,7 +2570,7 @@ public interface IProjectOverviewService
 
 ---
 
-## FILE 43: IProjectPeopleService.cs
+## FILE 47: IProjectPeopleService.cs
 
 <a id='iprojectpeopleservicecs'></a>
 
@@ -2365,7 +2592,7 @@ public interface IProjectPeopleService
 
 ---
 
-## FILE 44: IProjectService.cs
+## FILE 48: IProjectService.cs
 
 <a id='iprojectservicecs'></a>
 
@@ -2387,7 +2614,7 @@ public interface IProjectService
 
 ---
 
-## FILE 45: IProjectTimelineService.cs
+## FILE 49: IProjectTimelineService.cs
 
 <a id='iprojecttimelineservicecs'></a>
 
@@ -2406,7 +2633,7 @@ public interface IProjectTimelineService
 
 ---
 
-## FILE 46: IProjectVenueService.cs
+## FILE 50: IProjectVenueService.cs
 
 <a id='iprojectvenueservicecs'></a>
 
@@ -2427,7 +2654,7 @@ public interface IProjectVenueService
 
 ---
 
-## FILE 47: IUserManagementService.cs
+## FILE 51: IUserManagementService.cs
 
 <a id='iusermanagementservicecs'></a>
 
@@ -2439,7 +2666,7 @@ namespace WeddingAgency.Services;
 public interface IUserManagementService
 {
     Task<List<User>> GetAllUsersAsync();
-    Task CreateUserAsync(string login, string fullName, bool isAdmin = false);
+    Task CreateUserAsync(string login, string fullName, string? phone, bool isAdmin = false);
     Task ResetPasswordAsync(int userId);
     Task SetActiveStatusAsync(int userId, bool isActive);
 }
@@ -2447,7 +2674,28 @@ public interface IUserManagementService
 
 ---
 
-## FILE 48: NavigationService.cs
+## FILE 52: IVenueCatalogService.cs
+
+<a id='ivenuecatalogservicecs'></a>
+
+```csharp
+﻿using WeddingAgency.Models;
+
+namespace WeddingAgency.Services;
+
+public interface IVenueCatalogService
+{
+    Task<List<VenuesCatalog>> GetAllAsync();
+    Task<List<VenuesCatalog>> SearchAsync(string? search);
+    Task<VenuesCatalog> CreateAsync(string name, string? address, string? city, decimal? rentalCost, decimal? deposit);
+    Task UpdateAsync(VenuesCatalog venue);
+    Task DeleteAsync(int id);
+}
+```
+
+---
+
+## FILE 53: NavigationService.cs
 
 <a id='navigationservicecs'></a>
 
@@ -2499,7 +2747,7 @@ public class NavigationService : INavigationService
 
 ---
 
-## FILE 49: PeopleService.cs
+## FILE 54: PeopleService.cs
 
 <a id='peopleservicecs'></a>
 
@@ -2620,7 +2868,7 @@ public class PeopleService : IPeopleService
 
 ---
 
-## FILE 50: ProjectClientsService.cs
+## FILE 55: ProjectClientsService.cs
 
 <a id='projectclientsservicecs'></a>
 
@@ -2658,7 +2906,7 @@ public class ProjectClientsService : IProjectClientsService
 
 ---
 
-## FILE 51: ProjectContractorsService.cs
+## FILE 56: ProjectContractorsService.cs
 
 <a id='projectcontractorsservicecs'></a>
 
@@ -2696,7 +2944,7 @@ public class ProjectContractorsService : IProjectContractorsService
 
 ---
 
-## FILE 52: ProjectDetailsService.cs
+## FILE 57: ProjectDetailsService.cs
 
 <a id='projectdetailsservicecs'></a>
 
@@ -2731,7 +2979,7 @@ public class ProjectDetailsService : IProjectDetailsService
 
 ---
 
-## FILE 53: ProjectFinanceService.cs
+## FILE 58: ProjectFinanceService.cs
 
 <a id='projectfinanceservicecs'></a>
 
@@ -2835,7 +3083,7 @@ public class ProjectFinanceService : IProjectFinanceService
 
 ---
 
-## FILE 54: ProjectGuestsService.cs
+## FILE 59: ProjectGuestsService.cs
 
 <a id='projectguestsservicecs'></a>
 
@@ -2936,7 +3184,7 @@ public class ProjectGuestsService : IProjectGuestsService
 
 ---
 
-## FILE 55: ProjectOverviewService.cs
+## FILE 60: ProjectOverviewService.cs
 
 <a id='projectoverviewservicecs'></a>
 
@@ -2986,7 +3234,7 @@ public class ProjectOverviewService : IProjectOverviewService
 
 ---
 
-## FILE 56: ProjectPeopleService.cs
+## FILE 61: ProjectPeopleService.cs
 
 <a id='projectpeopleservicecs'></a>
 
@@ -3112,7 +3360,7 @@ public class ProjectPeopleService : IProjectPeopleService
 
 ---
 
-## FILE 57: ProjectService.cs
+## FILE 62: ProjectService.cs
 
 <a id='projectservicecs'></a>
 
@@ -3196,7 +3444,7 @@ public class ProjectService : IProjectService
 
 ---
 
-## FILE 58: ProjectTimelineService.cs
+## FILE 63: ProjectTimelineService.cs
 
 <a id='projecttimelineservicecs'></a>
 
@@ -3299,7 +3547,7 @@ public class ProjectTimelineService : IProjectTimelineService
 
 ---
 
-## FILE 59: ProjectVenueService.cs
+## FILE 64: ProjectVenueService.cs
 
 <a id='projectvenueservicecs'></a>
 
@@ -3377,7 +3625,7 @@ public class ProjectVenueService : IProjectVenueService
 
 ---
 
-## FILE 60: UserManagementService.cs
+## FILE 65: UserManagementService.cs
 
 <a id='usermanagementservicecs'></a>
 
@@ -3403,15 +3651,19 @@ public class UserManagementService : IUserManagementService
             .ToListAsync();
     }
 
-    public async Task CreateUserAsync(string login, string fullName, bool isAdmin = false)
+    public async Task CreateUserAsync(string login, string fullName, string? phone, bool isAdmin = false)
     {
         if (await _context.Users.AnyAsync(u => u.Login == login))
             throw new InvalidOperationException("Пользователь с таким логином уже существует.");
 
+        var phonePrimary = !string.IsNullOrWhiteSpace(phone)
+            ? phone
+            : Guid.NewGuid().ToString();
+
         var person = new Person
         {
             FullName = fullName,
-            PhonePrimary = "-",
+            PhonePrimary = phonePrimary,
             CreatedAt = DateTime.Now,
             UpdatedAt = DateTime.Now
         };
@@ -3437,7 +3689,7 @@ public class UserManagementService : IUserManagementService
         var user = await _context.Users.FindAsync(userId);
         if (user is null) return;
 
-        user.PasswordHash = "1"; 
+        user.PasswordHash = "1";
         user.MustChangePassword = true;
         await _context.SaveChangesAsync();
     }
@@ -3455,7 +3707,74 @@ public class UserManagementService : IUserManagementService
 
 ---
 
-## FILE 61: MaterialTheme.xaml
+## FILE 66: VenueCatalogService.cs
+
+<a id='venuecatalogservicecs'></a>
+
+```csharp
+﻿using Microsoft.EntityFrameworkCore;
+using WeddingAgency.Models;
+
+namespace WeddingAgency.Services;
+
+public class VenueCatalogService : IVenueCatalogService
+{
+    private readonly WeddingAgencyContext _context;
+
+    public VenueCatalogService(WeddingAgencyContext context)
+    {
+        _context = context;
+    }
+
+    public async Task<List<VenuesCatalog>> GetAllAsync()
+    {
+        return await _context.VenuesCatalogs.ToListAsync();
+    }
+
+    public async Task<List<VenuesCatalog>> SearchAsync(string? search)
+    {
+        var query = _context.VenuesCatalogs.AsQueryable();
+        if (!string.IsNullOrWhiteSpace(search))
+            query = query.Where(v => v.Name.Contains(search) || v.City.Contains(search) || v.Address.Contains(search));
+        return await query.Take(20).ToListAsync();
+    }
+
+    public async Task<VenuesCatalog> CreateAsync(string name, string? address, string? city, decimal? rentalCost, decimal? deposit)
+    {
+        var venue = new VenuesCatalog
+        {
+            Name = name,
+            Address = address,
+            City = city,
+            RentalCost = rentalCost,
+            FoodDeposit = deposit
+        };
+        _context.VenuesCatalogs.Add(venue);
+        await _context.SaveChangesAsync();
+        return venue;
+    }
+
+    public async Task UpdateAsync(VenuesCatalog venue)
+    {
+        _context.VenuesCatalogs.Update(venue);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task DeleteAsync(int id)
+    {
+        var venue = await _context.VenuesCatalogs.FindAsync(id);
+        if (venue != null)
+        {
+            _context.VenuesCatalogs.Remove(venue);
+            await _context.SaveChangesAsync();
+        }
+    }
+}
+```
+
+---
+
+## FILE 67: MaterialTheme.xaml
 
 <a id='materialthemexaml'></a>
 
@@ -3504,7 +3823,7 @@ public class UserManagementService : IUserManagementService
 
 ---
 
-## FILE 62: AdminUsersViewModel.cs
+## FILE 68: AdminUsersViewModel.cs
 
 <a id='adminusersviewmodelcs'></a>
 
@@ -3542,6 +3861,9 @@ public partial class AdminUsersViewModel : BaseViewModel
 
     [ObservableProperty]
     private string _newFullName = string.Empty;
+
+    [ObservableProperty]
+    private string _newPersonPhone = string.Empty;
 
     [ObservableProperty]
     private bool _newIsAdmin;
@@ -3591,7 +3913,6 @@ public partial class AdminUsersViewModel : BaseViewModel
 
             Users = new ObservableCollection<User>(filtered);
 
-            // После перезагрузки списка пытаемся сохранить выделение
             if (SelectedUser != null)
             {
                 var stillExists = Users.FirstOrDefault(u => u.Id == SelectedUser.Id);
@@ -3615,9 +3936,10 @@ public partial class AdminUsersViewModel : BaseViewModel
 
         try
         {
-            await _userService.CreateUserAsync(NewLogin.Trim(), NewFullName.Trim(), NewIsAdmin);
+            await _userService.CreateUserAsync(NewLogin.Trim(), NewFullName.Trim(), NewPersonPhone.Trim(), NewIsAdmin);
             NewLogin = string.Empty;
             NewFullName = string.Empty;
+            NewPersonPhone = string.Empty;
             NewIsAdmin = false;
             InfoMessage?.Invoke(this, "Пользователь создан");
             await LoadUsers();
@@ -3658,16 +3980,13 @@ public partial class AdminUsersViewModel : BaseViewModel
         var newStatus = !SelectedUser.IsActive;
         await _userService.SetActiveStatusAsync(SelectedUser.Id, newStatus);
 
-        // Обновляем текущий объект вручную
         SelectedUser.IsActive = newStatus;
 
-        // Принудительно уведомляем UI
         OnPropertyChanged(nameof(SelectedUser));
         OnPropertyChanged(nameof(ToggleButtonText));
 
         InfoMessage?.Invoke(this, newStatus ? "Пользователь разблокирован" : "Пользователь заблокирован");
 
-        // Перезагружаем список для актуальности
         await LoadUsers();
     }
 
@@ -3695,7 +4014,7 @@ public partial class AdminUsersViewModel : BaseViewModel
 
 ---
 
-## FILE 63: BaseViewModel.cs
+## FILE 69: BaseViewModel.cs
 
 <a id='baseviewmodelcs'></a>
 
@@ -3715,7 +4034,7 @@ public partial class BaseViewModel : ObservableObject
 
 ---
 
-## FILE 64: ChangePasswordViewModel.cs
+## FILE 70: ChangePasswordViewModel.cs
 
 <a id='changepasswordviewmodelcs'></a>
 
@@ -3796,24 +4115,89 @@ public partial class ChangePasswordViewModel : BaseViewModel
 
 ---
 
-## FILE 65: ContractorsViewModel.cs
+## FILE 71: ContractorsViewModel.cs
 
 <a id='contractorsviewmodelcs'></a>
 
 ```csharp
-﻿using WeddingAgency.ViewModels.Base;
+﻿using System.Collections.ObjectModel;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using WeddingAgency.Domain.Projects;
+using WeddingAgency.Models;
+using WeddingAgency.Services;
+using WeddingAgency.ViewModels.Base;
+using WeddingAgency.ViewModels.ProjectDetails;
 
 namespace WeddingAgency.ViewModels;
 
 public partial class ContractorsViewModel : BaseViewModel
 {
+    private readonly IServiceProvider _serviceProvider;
+
+    [ObservableProperty]
+    private ObservableCollection<ContractorListItem> _contractors = new();
+
+    [ObservableProperty]
+    private ContractorListItem? _selectedContractor;
+
+    [ObservableProperty]
+    private string _searchText = string.Empty;
+
     public override string Title => "Подрядчики";
+
+    public ContractorsViewModel(IServiceProvider serviceProvider)
+    {
+        _serviceProvider = serviceProvider;
+    }
+
+    public async Task InitializeAsync() => await LoadContractors();
+
+    [RelayCommand]
+    private async Task LoadContractors()
+    {
+        IsBusy = true;
+        try
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<WeddingAgencyContext>();
+
+            var query = context.ProjectPeople
+                .Where(pp => pp.Role == ProjectRoles.Contractor)
+                .Include(pp => pp.Person)
+                .Include(pp => pp.ProjectContractor)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(SearchText))
+            {
+                var search = SearchText.ToLower();
+                query = query.Where(pp =>
+                    pp.Person.FullName.ToLower().Contains(search) ||
+                    (pp.ProjectContractor != null && pp.ProjectContractor.EstimateItem.ItemName.ToLower().Contains(search)));
+            }
+
+            var list = await query.Select(pp => new ContractorListItem
+            {
+                PersonId = pp.PersonId,
+                FullName = pp.Person.FullName,
+                Service = pp.ProjectContractor != null ? pp.ProjectContractor.EstimateItem.ItemName : null,
+                Cost = pp.ProjectContractor != null ? pp.ProjectContractor.ServiceCost : null
+            }).ToListAsync();
+
+            Contractors = new ObservableCollection<ContractorListItem>(list);
+        }
+        finally { IsBusy = false; }
+    }
+
+    partial void OnSearchTextChanged(string value) => LoadContractorsCommand.Execute(null);
 }
 ```
 
 ---
 
-## FILE 66: CreateProjectViewModel.cs
+## FILE 72: CreateProjectViewModel.cs
 
 <a id='createprojectviewmodelcs'></a>
 
@@ -3909,41 +4293,105 @@ public partial class CreateProjectViewModel : BaseViewModel
 
 ---
 
-## FILE 67: DashboardViewModel.cs
+## FILE 73: DashboardViewModel.cs
 
 <a id='dashboardviewmodelcs'></a>
 
 ```csharp
-﻿using WeddingAgency.ViewModels.Base;
+﻿using System.Collections.ObjectModel;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using WeddingAgency.Services;
+using WeddingAgency.ViewModels.Base;
 
 namespace WeddingAgency.ViewModels;
 
 public partial class DashboardViewModel : BaseViewModel
 {
+    private readonly IDashboardService _dashboardService;
+
+    [ObservableProperty]
+    private DashboardData? _data;
+
+    [ObservableProperty]
+    private ObservableCollection<UpcomingWedding> _upcomingWeddings = new();
+
     public override string Title => "Дашборд";
+
+    public DashboardViewModel(IDashboardService dashboardService)
+    {
+        _dashboardService = dashboardService;
+    }
+
+    public async Task InitializeAsync() => await LoadDashboard();
+
+    [RelayCommand]
+    private async Task LoadDashboard()
+    {
+        IsBusy = true;
+        try
+        {
+            Data = await _dashboardService.GetDashboardDataAsync();
+            UpcomingWeddings = new ObservableCollection<UpcomingWedding>(Data?.UpcomingWeddings ?? new List<UpcomingWedding>());
+        }
+        finally { IsBusy = false; }
+    }
 }
 ```
 
 ---
 
-## FILE 68: FinanceViewModel.cs
+## FILE 74: FinanceViewModel.cs
 
 <a id='financeviewmodelcs'></a>
 
 ```csharp
-﻿using WeddingAgency.ViewModels.Base;
+﻿using System.Collections.ObjectModel;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using WeddingAgency.Services;
+using WeddingAgency.ViewModels.Base;
+using WeddingAgency.ViewModels.ProjectDetails;
 
 namespace WeddingAgency.ViewModels;
 
 public partial class FinanceViewModel : BaseViewModel
 {
+    private readonly IFinanceOverviewService _financeService;
+
+    [ObservableProperty]
+    private FinanceSummaryModel? _summary;
+
+    [ObservableProperty]
+    private ObservableCollection<FinanceTransactionModel> _transactions = new();
+
     public override string Title => "Финансы";
+
+    public FinanceViewModel(IFinanceOverviewService financeService)
+    {
+        _financeService = financeService;
+    }
+
+    public async Task InitializeAsync() => await LoadFinance();
+
+    [RelayCommand]
+    private async Task LoadFinance()
+    {
+        IsBusy = true;
+        try
+        {
+            Summary = await _financeService.GetOverallSummaryAsync();
+            var transactions = await _financeService.GetAllTransactionsAsync();
+            Transactions = new ObservableCollection<FinanceTransactionModel>(transactions);
+        }
+        finally { IsBusy = false; }
+    }
 }
 ```
 
 ---
 
-## FILE 69: GlobalUsings.cs
+## FILE 75: GlobalUsings.cs
 
 <a id='globalusingscs'></a>
 
@@ -3954,7 +4402,7 @@ global using CommunityToolkit.Mvvm.Input;
 
 ---
 
-## FILE 70: LoginViewModel.cs
+## FILE 76: LoginViewModel.cs
 
 <a id='loginviewmodelcs'></a>
 
@@ -4037,7 +4485,7 @@ public partial class LoginViewModel : BaseViewModel
 
 ---
 
-## FILE 71: MainWindowViewModel.cs
+## FILE 77: MainWindowViewModel.cs
 
 <a id='mainwindowviewmodelcs'></a>
 
@@ -4124,7 +4572,7 @@ public partial class MainWindowViewModel : BaseViewModel
 
 ---
 
-## FILE 72: PeopleViewModel.cs
+## FILE 78: PeopleViewModel.cs
 
 <a id='peopleviewmodelcs'></a>
 
@@ -4245,7 +4693,7 @@ public partial class PeopleViewModel : BaseViewModel
 
 ---
 
-## FILE 73: ProjectDetailsViewModel.cs
+## FILE 79: ProjectDetailsViewModel.cs
 
 <a id='projectdetailsviewmodelcs'></a>
 
@@ -4283,21 +4731,18 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
     // Клиенты
     [ObservableProperty]
     private ObservableCollection<ClientListItem> _clients = new();
-
     [ObservableProperty]
     private ClientListItem? _selectedClient;
 
     // Подрядчики
     [ObservableProperty]
     private ObservableCollection<ContractorListItem> _contractors = new();
-
     [ObservableProperty]
     private ContractorListItem? _selectedContractor;
 
     // Гости
     [ObservableProperty]
     private ObservableCollection<GuestListItem> _guests = new();
-
     [ObservableProperty]
     private GuestListItem? _selectedGuest;
 
@@ -4305,79 +4750,49 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
     [ObservableProperty]
     private ObservableCollection<VenueItemModel> _venues = new();
 
-    [ObservableProperty]
-    private string _venueSearchText = string.Empty;
-
-    [ObservableProperty]
-    private ObservableCollection<VenuesCatalog> _venueSearchResults = new();
-
-    [ObservableProperty]
-    private decimal? _newVenueRentalCost;
-
-    [ObservableProperty]
-    private decimal? _newVenueDeposit;
-
-    [ObservableProperty]
-    private DateOnly? _newVenueEventDate;
-
     // Таймлайн
     [ObservableProperty]
     private ObservableCollection<TimelineEventItem> _timelineEvents = new();
-
     [ObservableProperty]
     private DateTime? _newEventStartTime;
-
     [ObservableProperty]
     private DateTime? _newEventEndTime;
-
     [ObservableProperty]
     private string? _newEventDescription;
-
     [ObservableProperty]
     private string? _newEventLocation;
-
     [ObservableProperty]
     private string? _newEventNotes;
-
     [ObservableProperty]
     private User? _newEventResponsible;
 
     // Финансы
     [ObservableProperty]
     private FinanceSummaryModel? _financeSummary;
-
     [ObservableProperty]
     private ObservableCollection<FinanceTransactionModel> _financeTransactions = new();
-
     [ObservableProperty]
     private bool _isFinanceLoaded;
 
     // Edit mode
     [ObservableProperty]
     private bool _isEditMode;
-
     [ObservableProperty]
     private string? _editProjectNumber;
-
     [ObservableProperty]
     private DateOnly? _editWeddingDate;
-
     [ObservableProperty]
     private string? _editLocationCity;
-
     [ObservableProperty]
     private decimal? _editBudgetTotal;
-
     [ObservableProperty]
     private int? _editGuestCount;
-
     [ObservableProperty]
     private string? _editStatus;
 
     // Менеджеры
     [ObservableProperty]
     private ObservableCollection<User> _managers = new();
-
     [ObservableProperty]
     private User? _selectedManager;
 
@@ -4445,263 +4860,7 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
         }
     }
 
-    // ========== EDIT MODE ==========
-
-    [RelayCommand]
-    private async Task EnableEditMode()
-    {
-        if (Header == null) return;
-        using var scope = _serviceProvider.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<WeddingAgencyContext>();
-        var project = await context.Projects.FindAsync(_projectId);
-        if (project == null) return;
-
-        EditProjectNumber = project.ProjectNumber;
-        EditWeddingDate = project.WeddingDate;
-        EditLocationCity = project.LocationCity;
-        EditBudgetTotal = project.BudgetTotal;
-        EditGuestCount = project.GuestCountMin;
-        EditStatus = project.Status;
-
-        var users = await context.Users.Include(u => u.Person).Where(u => u.IsActive).ToListAsync();
-        Managers = new ObservableCollection<User>(users);
-        SelectedManager = users.FirstOrDefault(u => u.Id == project.ResponsibleManagerId);
-        IsEditMode = true;
-    }
-
-    [RelayCommand]
-    private void CancelEdit() => IsEditMode = false;
-
-    [RelayCommand]
-    private async Task SaveEditAsync()
-    {
-        if (Header == null) return;
-        using var scope = _serviceProvider.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<WeddingAgencyContext>();
-        var project = await context.Projects.FindAsync(_projectId);
-        if (project == null) return;
-
-        project.ProjectNumber = EditProjectNumber ?? Header.ProjectNumber;
-        project.WeddingDate = EditWeddingDate;
-        project.LocationCity = EditLocationCity;
-        project.BudgetTotal = EditBudgetTotal;
-        project.GuestCountMin = EditGuestCount;
-        project.Status = EditStatus ?? Header.Status;
-        project.ResponsibleManagerId = SelectedManager?.PersonId;
-        await context.SaveChangesAsync();
-
-        Header = new ProjectHeaderModel
-        {
-            Id = Header.Id,
-            ProjectNumber = project.ProjectNumber,
-            WeddingDate = project.WeddingDate,
-            Status = project.Status ?? "",
-            BudgetTotal = project.BudgetTotal,
-            GuestCountMin = project.GuestCountMin,
-            LocationCity = project.LocationCity,
-            ManagerName = SelectedManager?.Person?.FullName ?? "Не назначен",
-            ClientCount = Header.ClientCount,
-            ContractorCount = Header.ContractorCount,
-            GuestCount = Header.GuestCount
-        };
-        OnPropertyChanged(nameof(Title));
-        IsEditMode = false;
-    }
-
     private WeddingAgencyContext GetContext() => _serviceProvider.GetRequiredService<WeddingAgencyContext>();
-
-    // ========== КЛИЕНТЫ ==========
-
-    [RelayCommand]
-    private async Task LoadClientsAsync()
-    {
-        var list = await _peopleService.GetClientsAsync(_projectId);
-        Clients = new ObservableCollection<ClientListItem>(list);
-    }
-
-    [RelayCommand]
-    private async Task AddClientAsync()
-    {
-        var vm = _serviceProvider.GetRequiredService<SelectPersonViewModel>();
-        var window = new SelectPersonWindow(vm);
-        window.ShowDialog();
-        if (window.Tag is PersonSearchResult person)
-        {
-            await _peopleService.AddClientAsync(_projectId, person.Id);
-            await LoadClientsAsync();
-            await RefreshHeaderAsync();
-        }
-    }
-
-    [RelayCommand]
-    private async Task EditClientAsync()
-    {
-        if (SelectedClient == null) return;
-        var vm = _serviceProvider.GetRequiredService<SelectPersonViewModel>();
-        vm.SearchText = SelectedClient.FullName;
-        vm.SearchCommand.Execute(null);
-        var window = new SelectPersonWindow(vm);
-        window.ShowDialog();
-        if (window.Tag is PersonSearchResult person)
-        {
-            await _peopleService.RemoveClientAsync(_projectId, SelectedClient.PersonId);
-            await _peopleService.AddClientAsync(_projectId, person.Id);
-            await LoadClientsAsync();
-            await RefreshHeaderAsync();
-        }
-    }
-
-    [RelayCommand]
-    private async Task RemoveClientAsync()
-    {
-        if (SelectedClient == null) return;
-        await _peopleService.RemoveClientAsync(_projectId, SelectedClient.PersonId);
-        await LoadClientsAsync();
-        await RefreshHeaderAsync();
-    }
-
-    // ========== ПОДРЯДЧИКИ ==========
-
-    [RelayCommand]
-    private async Task LoadContractorsAsync()
-    {
-        var list = await _peopleService.GetContractorsAsync(_projectId);
-        Contractors = new ObservableCollection<ContractorListItem>(list);
-    }
-
-    [RelayCommand]
-    private async Task AddContractorAsync()
-    {
-        var vm = _serviceProvider.GetRequiredService<SelectPersonViewModel>();
-        var window = new AddContractorWindow(vm);
-        if (window.ShowDialog() == true && window.SelectedPerson != null)
-        {
-            await _peopleService.AddContractorAsync(_projectId, window.SelectedPerson.Id, window.ContractorService, window.ContractorCost, null);
-            await LoadContractorsAsync();
-            await RefreshHeaderAsync();
-        }
-    }
-
-    [RelayCommand]
-    private async Task EditContractorAsync()
-    {
-        if (SelectedContractor == null) return;
-        var vm = _serviceProvider.GetRequiredService<SelectPersonViewModel>();
-        vm.FillForContractor(SelectedContractor.Service, SelectedContractor.Cost);
-        vm.SearchText = SelectedContractor.FullName;
-        vm.SearchCommand.Execute(null);
-        var window = new AddContractorWindow(vm);
-        if (window.ShowDialog() == true && window.SelectedPerson != null)
-        {
-            await _peopleService.RemoveContractorAsync(_projectId, SelectedContractor.PersonId);
-            await _peopleService.AddContractorAsync(_projectId, window.SelectedPerson.Id, window.ContractorService, window.ContractorCost, null);
-            await LoadContractorsAsync();
-            await RefreshHeaderAsync();
-        }
-    }
-
-    [RelayCommand]
-    private async Task RemoveContractorAsync()
-    {
-        if (SelectedContractor == null) return;
-        await _peopleService.RemoveContractorAsync(_projectId, SelectedContractor.PersonId);
-        await LoadContractorsAsync();
-        await RefreshHeaderAsync();
-    }
-
-    // ========== ГОСТИ ==========
-
-    [RelayCommand]
-    private async Task LoadGuestsAsync()
-    {
-        var list = await _guestsService.GetGuestsAsync(_projectId);
-        Guests = new ObservableCollection<GuestListItem>(list);
-    }
-
-    [RelayCommand]
-    private async Task AddGuestAsync()
-    {
-        var vm = _serviceProvider.GetRequiredService<SelectPersonViewModel>();
-        var window = new AddGuestWindow(vm);
-        if (window.ShowDialog() == true && window.SelectedPerson != null)
-        {
-            await _guestsService.AddGuestAsync(_projectId, window.SelectedPerson.Id);
-            var guests = await _guestsService.GetGuestsAsync(_projectId);
-            var lastGuest = guests.LastOrDefault();
-            if (lastGuest != null)
-            {
-                await _guestsService.UpdateGuestAsync(lastGuest.Id, window.InvitationStatus, window.DietaryRestrictions, window.TransferNeeded, window.AccommodationNeeded, window.TableNumber);
-            }
-            await LoadGuestsAsync();
-            await RefreshHeaderAsync();
-        }
-    }
-
-    [RelayCommand]
-    private async Task EditGuestAsync()
-    {
-        if (SelectedGuest == null) return;
-        var vm = _serviceProvider.GetRequiredService<SelectPersonViewModel>();
-        vm.FillForGuest(SelectedGuest.InvitationStatus, SelectedGuest.DietaryRestrictions, SelectedGuest.TransferNeeded, SelectedGuest.AccommodationNeeded, SelectedGuest.TableNumber);
-        vm.SearchText = SelectedGuest.FullName;
-        vm.SearchCommand.Execute(null);
-        var window = new AddGuestWindow(vm);
-        if (window.ShowDialog() == true && window.SelectedPerson != null)
-        {
-            await _guestsService.RemoveGuestAsync(_projectId, SelectedGuest.PersonId);
-            await _guestsService.AddGuestAsync(_projectId, window.SelectedPerson.Id);
-            var guests = await _guestsService.GetGuestsAsync(_projectId);
-            var lastGuest = guests.LastOrDefault();
-            if (lastGuest != null)
-                await _guestsService.UpdateGuestAsync(lastGuest.Id, window.InvitationStatus, window.DietaryRestrictions, window.TransferNeeded, window.AccommodationNeeded, window.TableNumber);
-            await LoadGuestsAsync();
-            await RefreshHeaderAsync();
-        }
-    }
-
-    [RelayCommand]
-    private async Task RemoveGuestAsync()
-    {
-        if (SelectedGuest == null) return;
-        await _guestsService.RemoveGuestAsync(_projectId, SelectedGuest.PersonId);
-        await LoadGuestsAsync();
-        await RefreshHeaderAsync();
-    }
-
-    // ========== ПЛОЩАДКА ==========
-
-    [RelayCommand]
-    private async Task LoadVenuesAsync() { var list = await _venueService.GetVenuesAsync(_projectId); Venues = new ObservableCollection<VenueItemModel>(list); }
-
-    [RelayCommand]
-    private async Task SearchVenuesAsync() { if (string.IsNullOrWhiteSpace(VenueSearchText)) { VenueSearchResults.Clear(); return; } var results = await _venueService.SearchVenuesAsync(VenueSearchText); VenueSearchResults = new ObservableCollection<VenuesCatalog>(results); }
-
-    [RelayCommand]
-    private async Task AddVenueAsync(VenuesCatalog? venue) { if (venue == null) return; await _venueService.AddVenueAsync(_projectId, venue.Id, NewVenueRentalCost, NewVenueDeposit, NewVenueEventDate); VenueSearchText = string.Empty; NewVenueRentalCost = null; NewVenueDeposit = null; NewVenueEventDate = null; VenueSearchResults.Clear(); await LoadVenuesAsync(); }
-
-    [RelayCommand]
-    private async Task RemoveVenueAsync(object? parameter) { if (parameter is VenueItemModel venue) { await _venueService.RemoveVenueAsync(venue.BookingId); await LoadVenuesAsync(); } }
-
-    // ========== ТАЙМЛАЙН ==========
-
-    [RelayCommand]
-    private async Task LoadTimelineAsync() { var list = await _timelineService.GetEventsAsync(_projectId); TimelineEvents = new ObservableCollection<TimelineEventItem>(list); if (Managers.Count == 0) { var context = GetContext(); var users = await context.Users.Include(u => u.Person).Where(u => u.IsActive).ToListAsync(); Managers = new ObservableCollection<User>(users); } }
-
-    [RelayCommand]
-    private async Task AddTimelineEventAsync() { if (string.IsNullOrWhiteSpace(NewEventDescription)) return; await _timelineService.AddEventAsync(_projectId, NewEventStartTime, NewEventEndTime, NewEventDescription, NewEventLocation, NewEventResponsible?.PersonId, NewEventNotes); NewEventStartTime = null; NewEventEndTime = null; NewEventDescription = null; NewEventLocation = null; NewEventNotes = null; NewEventResponsible = null; await LoadTimelineAsync(); }
-
-    [RelayCommand]
-    private async Task DeleteTimelineEventAsync(object? parameter) { if (parameter is TimelineEventItem eventItem) { await _timelineService.DeleteEventAsync(eventItem.Id); await LoadTimelineAsync(); } }
-
-    // ========== ФИНАНСЫ ==========
-
-    [RelayCommand]
-    private async Task LoadFinanceAsync() { if (IsFinanceLoaded) return; IsBusy = true; try { FinanceSummary = await _financeService.GetSummaryAsync(_projectId); var transactions = await _financeService.GetTransactionsAsync(_projectId); FinanceTransactions = new ObservableCollection<FinanceTransactionModel>(transactions); IsFinanceLoaded = true; } finally { IsBusy = false; } }
-
-    // ========== НАЗАД ==========
-
-    [RelayCommand]
-    private void GoBack() => _navigation.NavigateTo<ProjectsViewModel>();
 
     private async Task RefreshHeaderAsync()
     {
@@ -4714,12 +4873,51 @@ public partial class ProjectDetailsViewModel : BaseViewModel, INavigationAware
             OnPropertyChanged(nameof(Title));
         }
     }
+
+    // ========== EDIT MODE ==========
+    [RelayCommand] private async Task EnableEditMode() { if (Header == null) return; using var scope = _serviceProvider.CreateScope(); var context = scope.ServiceProvider.GetRequiredService<WeddingAgencyContext>(); var project = await context.Projects.FindAsync(_projectId); if (project == null) return; EditProjectNumber = project.ProjectNumber; EditWeddingDate = project.WeddingDate; EditLocationCity = project.LocationCity; EditBudgetTotal = project.BudgetTotal; EditGuestCount = project.GuestCountMin; EditStatus = project.Status; var users = await context.Users.Include(u => u.Person).Where(u => u.IsActive).ToListAsync(); Managers = new ObservableCollection<User>(users); SelectedManager = users.FirstOrDefault(u => u.Id == project.ResponsibleManagerId); IsEditMode = true; }
+    [RelayCommand] private void CancelEdit() => IsEditMode = false;
+    [RelayCommand] private async Task SaveEditAsync() { if (Header == null) return; using var scope = _serviceProvider.CreateScope(); var context = scope.ServiceProvider.GetRequiredService<WeddingAgencyContext>(); var project = await context.Projects.FindAsync(_projectId); if (project == null) return; project.ProjectNumber = EditProjectNumber ?? Header.ProjectNumber; project.WeddingDate = EditWeddingDate; project.LocationCity = EditLocationCity; project.BudgetTotal = EditBudgetTotal; project.GuestCountMin = EditGuestCount; project.Status = EditStatus ?? Header.Status; project.ResponsibleManagerId = SelectedManager?.PersonId; await context.SaveChangesAsync(); Header = new ProjectHeaderModel { Id = Header.Id, ProjectNumber = project.ProjectNumber, WeddingDate = project.WeddingDate, Status = project.Status ?? "", BudgetTotal = project.BudgetTotal, GuestCountMin = project.GuestCountMin, LocationCity = project.LocationCity, ManagerName = SelectedManager?.Person?.FullName ?? "Не назначен", ClientCount = Header.ClientCount, ContractorCount = Header.ContractorCount, GuestCount = Header.GuestCount }; OnPropertyChanged(nameof(Title)); IsEditMode = false; }
+
+    // ========== КЛИЕНТЫ ==========
+    [RelayCommand] private async Task LoadClientsAsync() { var list = await _peopleService.GetClientsAsync(_projectId); Clients = new ObservableCollection<ClientListItem>(list); }
+    [RelayCommand] private async Task AddClientAsync() { var vm = _serviceProvider.GetRequiredService<SelectPersonViewModel>(); var window = new SelectPersonWindow(vm); window.ShowDialog(); if (window.Tag is PersonSearchResult person) { await _peopleService.AddClientAsync(_projectId, person.Id); await LoadClientsAsync(); await RefreshHeaderAsync(); } }
+    [RelayCommand] private async Task EditClientAsync() { if (SelectedClient == null) return; var vm = _serviceProvider.GetRequiredService<SelectPersonViewModel>(); vm.SearchText = SelectedClient.FullName; vm.SearchCommand.Execute(null); var window = new SelectPersonWindow(vm); window.ShowDialog(); if (window.Tag is PersonSearchResult person) { await _peopleService.RemoveClientAsync(_projectId, SelectedClient.PersonId); await _peopleService.AddClientAsync(_projectId, person.Id); await LoadClientsAsync(); await RefreshHeaderAsync(); } }
+    [RelayCommand] private async Task RemoveClientAsync() { if (SelectedClient == null) return; await _peopleService.RemoveClientAsync(_projectId, SelectedClient.PersonId); await LoadClientsAsync(); await RefreshHeaderAsync(); }
+
+    // ========== ПОДРЯДЧИКИ ==========
+    [RelayCommand] private async Task LoadContractorsAsync() { var list = await _peopleService.GetContractorsAsync(_projectId); Contractors = new ObservableCollection<ContractorListItem>(list); }
+    [RelayCommand] private async Task AddContractorAsync() { var vm = _serviceProvider.GetRequiredService<SelectPersonViewModel>(); var window = new AddContractorWindow(vm); if (window.ShowDialog() == true && window.SelectedPerson != null) { await _peopleService.AddContractorAsync(_projectId, window.SelectedPerson.Id, window.ContractorService, window.ContractorCost, null); await LoadContractorsAsync(); await RefreshHeaderAsync(); } }
+    [RelayCommand] private async Task EditContractorAsync() { if (SelectedContractor == null) return; var vm = _serviceProvider.GetRequiredService<SelectPersonViewModel>(); vm.FillForContractor(SelectedContractor.Service, SelectedContractor.Cost); vm.SearchText = SelectedContractor.FullName; vm.SearchCommand.Execute(null); var window = new AddContractorWindow(vm); if (window.ShowDialog() == true && window.SelectedPerson != null) { await _peopleService.RemoveContractorAsync(_projectId, SelectedContractor.PersonId); await _peopleService.AddContractorAsync(_projectId, window.SelectedPerson.Id, window.ContractorService, window.ContractorCost, null); await LoadContractorsAsync(); await RefreshHeaderAsync(); } }
+    [RelayCommand] private async Task RemoveContractorAsync() { if (SelectedContractor == null) return; await _peopleService.RemoveContractorAsync(_projectId, SelectedContractor.PersonId); await LoadContractorsAsync(); await RefreshHeaderAsync(); }
+
+    // ========== ГОСТИ ==========
+    [RelayCommand] private async Task LoadGuestsAsync() { var list = await _guestsService.GetGuestsAsync(_projectId); Guests = new ObservableCollection<GuestListItem>(list); }
+    [RelayCommand] private async Task AddGuestAsync() { var vm = _serviceProvider.GetRequiredService<SelectPersonViewModel>(); var window = new AddGuestWindow(vm); if (window.ShowDialog() == true && window.SelectedPerson != null) { await _guestsService.AddGuestAsync(_projectId, window.SelectedPerson.Id); var guests = await _guestsService.GetGuestsAsync(_projectId); var lastGuest = guests.LastOrDefault(); if (lastGuest != null) { await _guestsService.UpdateGuestAsync(lastGuest.Id, window.InvitationStatus, window.DietaryRestrictions, window.TransferNeeded, window.AccommodationNeeded, null); } await LoadGuestsAsync(); await RefreshHeaderAsync(); } }
+    [RelayCommand] private async Task EditGuestAsync() { if (SelectedGuest == null) return; var vm = _serviceProvider.GetRequiredService<SelectPersonViewModel>(); vm.FillForGuest(SelectedGuest.InvitationStatus, SelectedGuest.DietaryRestrictions, SelectedGuest.TransferNeeded, SelectedGuest.AccommodationNeeded, SelectedGuest.TableNumber); vm.SearchText = SelectedGuest.FullName; vm.SearchCommand.Execute(null); var window = new AddGuestWindow(vm); if (window.ShowDialog() == true && window.SelectedPerson != null) { await _guestsService.RemoveGuestAsync(_projectId, SelectedGuest.PersonId); await _guestsService.AddGuestAsync(_projectId, window.SelectedPerson.Id); var guests = await _guestsService.GetGuestsAsync(_projectId); var lastGuest = guests.LastOrDefault(); if (lastGuest != null) await _guestsService.UpdateGuestAsync(lastGuest.Id, window.InvitationStatus, window.DietaryRestrictions, window.TransferNeeded, window.AccommodationNeeded, null); await LoadGuestsAsync(); await RefreshHeaderAsync(); } }
+    [RelayCommand] private async Task RemoveGuestAsync() { if (SelectedGuest == null) return; await _guestsService.RemoveGuestAsync(_projectId, SelectedGuest.PersonId); await LoadGuestsAsync(); await RefreshHeaderAsync(); }
+
+    // ========== ПЛОЩАДКА ==========
+    [RelayCommand] private async Task LoadVenuesAsync() { var list = await _venueService.GetVenuesAsync(_projectId); Venues = new ObservableCollection<VenueItemModel>(list); }
+    [RelayCommand] private async Task AddVenueAsync() { var window = new SelectVenueWindow(_serviceProvider); if (window.ShowDialog() == true && window.SelectedVenue != null) { await _venueService.AddVenueAsync(_projectId, window.SelectedVenue.Id, null, null, null); await LoadVenuesAsync(); } }
+    [RelayCommand] private async Task RemoveVenueAsync(object? parameter) { if (parameter is VenueItemModel venue) { await _venueService.RemoveVenueAsync(venue.BookingId); await LoadVenuesAsync(); } }
+
+    // ========== ТАЙМЛАЙН ==========
+    [RelayCommand] private async Task LoadTimelineAsync() { var list = await _timelineService.GetEventsAsync(_projectId); TimelineEvents = new ObservableCollection<TimelineEventItem>(list); if (Managers.Count == 0) { var context = GetContext(); var users = await context.Users.Include(u => u.Person).Where(u => u.IsActive).ToListAsync(); Managers = new ObservableCollection<User>(users); } }
+    [RelayCommand] private async Task AddTimelineEventAsync() { if (string.IsNullOrWhiteSpace(NewEventDescription)) return; await _timelineService.AddEventAsync(_projectId, NewEventStartTime, NewEventEndTime, NewEventDescription, NewEventLocation, NewEventResponsible?.PersonId, NewEventNotes); NewEventStartTime = null; NewEventEndTime = null; NewEventDescription = null; NewEventLocation = null; NewEventNotes = null; NewEventResponsible = null; await LoadTimelineAsync(); }
+    [RelayCommand] private async Task DeleteTimelineEventAsync(object? parameter) { if (parameter is TimelineEventItem eventItem) { await _timelineService.DeleteEventAsync(eventItem.Id); await LoadTimelineAsync(); } }
+
+    // ========== ФИНАНСЫ ==========
+    [RelayCommand] private async Task LoadFinanceAsync() { if (IsFinanceLoaded) return; IsBusy = true; try { FinanceSummary = await _financeService.GetSummaryAsync(_projectId); var transactions = await _financeService.GetTransactionsAsync(_projectId); FinanceTransactions = new ObservableCollection<FinanceTransactionModel>(transactions); IsFinanceLoaded = true; } finally { IsBusy = false; } }
+
+    // ========== НАЗАД ==========
+    [RelayCommand] private void GoBack() => _navigation.NavigateTo<ProjectsViewModel>();
 }
 ```
 
 ---
 
-## FILE 74: ClientListItem.cs
+## FILE 80: ClientListItem.cs
 
 <a id='clientlistitemcs'></a>
 
@@ -4737,7 +4935,7 @@ public class ClientListItem
 
 ---
 
-## FILE 75: ContractorListItem.cs
+## FILE 81: ContractorListItem.cs
 
 <a id='contractorlistitemcs'></a>
 
@@ -4755,7 +4953,7 @@ public class ContractorListItem
 
 ---
 
-## FILE 76: FinanceSummaryModel.cs
+## FILE 82: FinanceSummaryModel.cs
 
 <a id='financesummarymodelcs'></a>
 
@@ -4776,7 +4974,7 @@ public class FinanceSummaryModel
 
 ---
 
-## FILE 77: FinanceTransactionModel.cs
+## FILE 83: FinanceTransactionModel.cs
 
 <a id='financetransactionmodelcs'></a>
 
@@ -4796,7 +4994,7 @@ public class FinanceTransactionModel
 
 ---
 
-## FILE 78: GuestListItem.cs
+## FILE 84: GuestListItem.cs
 
 <a id='guestlistitemcs'></a>
 
@@ -4831,7 +5029,7 @@ public partial class GuestListItem : ObservableObject
 
 ---
 
-## FILE 79: PersonSearchResult.cs
+## FILE 85: PersonSearchResult.cs
 
 <a id='personsearchresultcs'></a>
 
@@ -4848,7 +5046,7 @@ public class PersonSearchResult
 
 ---
 
-## FILE 80: ProjectDetailsModel.cs
+## FILE 86: ProjectDetailsModel.cs
 
 <a id='projectdetailsmodelcs'></a>
 
@@ -4870,7 +5068,7 @@ public class ProjectDetailsModel
 
 ---
 
-## FILE 81: ProjectHeaderModel.cs
+## FILE 87: ProjectHeaderModel.cs
 
 <a id='projectheadermodelcs'></a>
 
@@ -4895,7 +5093,7 @@ public class ProjectHeaderModel
 
 ---
 
-## FILE 82: TimelineEventItem.cs
+## FILE 88: TimelineEventItem.cs
 
 <a id='timelineeventitemcs'></a>
 
@@ -4916,7 +5114,7 @@ public class TimelineEventItem
 
 ---
 
-## FILE 83: VenueItemModel.cs
+## FILE 89: VenueItemModel.cs
 
 <a id='venueitemmodelcs'></a>
 
@@ -4938,7 +5136,7 @@ public class VenueItemModel
 
 ---
 
-## FILE 84: ProjectListItem.cs
+## FILE 90: ProjectListItem.cs
 
 <a id='projectlistitemcs'></a>
 
@@ -4963,7 +5161,7 @@ public partial class ProjectListItem : ObservableObject
 
 ---
 
-## FILE 85: ProjectsViewModel.cs
+## FILE 91: ProjectsViewModel.cs
 
 <a id='projectsviewmodelcs'></a>
 
@@ -5099,7 +5297,7 @@ public partial class ProjectsViewModel : BaseViewModel
 
 ---
 
-## FILE 86: SelectPersonViewModel.cs
+## FILE 92: SelectPersonViewModel.cs
 
 <a id='selectpersonviewmodelcs'></a>
 
@@ -5217,51 +5415,161 @@ public partial class SelectPersonViewModel : BaseViewModel
 
 ---
 
-## FILE 87: VenuesViewModel.cs
+## FILE 93: VenuesViewModel.cs
 
 <a id='venuesviewmodelcs'></a>
 
 ```csharp
-﻿using WeddingAgency.ViewModels.Base;
+﻿using System.Collections.ObjectModel;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using WeddingAgency.Models;
+using WeddingAgency.Services;
+using WeddingAgency.ViewModels.Base;
 
 namespace WeddingAgency.ViewModels;
 
 public partial class VenuesViewModel : BaseViewModel
 {
+    private readonly IVenueCatalogService _venueService;
+
+    [ObservableProperty]
+    private ObservableCollection<VenuesCatalog> _venues = new();
+
+    [ObservableProperty]
+    private VenuesCatalog? _selectedVenue;
+
+    [ObservableProperty]
+    private string _searchText = string.Empty;
+
+    // Поля добавления
+    [ObservableProperty]
+    private string _newName = string.Empty;
+
+    [ObservableProperty]
+    private string? _newAddress;
+
+    [ObservableProperty]
+    private string? _newCity;
+
+    [ObservableProperty]
+    private decimal? _newRentalCost;
+
+    [ObservableProperty]
+    private decimal? _newDeposit;
+
     public override string Title => "Площадки";
+
+    public VenuesViewModel(IVenueCatalogService venueService)
+    {
+        _venueService = venueService;
+    }
+
+    public async Task InitializeAsync() => await LoadVenues();
+
+    [RelayCommand]
+    private async Task LoadVenues()
+    {
+        IsBusy = true;
+        try
+        {
+            var list = string.IsNullOrWhiteSpace(SearchText)
+                ? await _venueService.GetAllAsync()
+                : await _venueService.SearchAsync(SearchText);
+            Venues = new ObservableCollection<VenuesCatalog>(list);
+        }
+        finally { IsBusy = false; }
+    }
+
+    [RelayCommand]
+    private async Task AddVenue()
+    {
+        if (string.IsNullOrWhiteSpace(NewName)) return;
+        await _venueService.CreateAsync(NewName.Trim(), NewAddress, NewCity, NewRentalCost, NewDeposit);
+        NewName = string.Empty; NewAddress = null; NewCity = null; NewRentalCost = null; NewDeposit = null;
+        await LoadVenues();
+    }
+
+    [RelayCommand]
+    private async Task UpdateVenue()
+    {
+        if (SelectedVenue == null) return;
+        SelectedVenue.Name = NewName;
+        SelectedVenue.Address = NewAddress;
+        SelectedVenue.City = NewCity;
+        SelectedVenue.RentalCost = NewRentalCost;
+        SelectedVenue.FoodDeposit = NewDeposit;
+        await _venueService.UpdateAsync(SelectedVenue);
+        await LoadVenues();
+    }
+
+    [RelayCommand]
+    private async Task DeleteVenue()
+    {
+        if (SelectedVenue == null) return;
+        await _venueService.DeleteAsync(SelectedVenue.Id);
+        await LoadVenues();
+    }
+
+    partial void OnSearchTextChanged(string value) => LoadVenuesCommand.Execute(null);
+
+    partial void OnSelectedVenueChanged(VenuesCatalog? value)
+    {
+        if (value != null)
+        {
+            NewName = value.Name;
+            NewAddress = value.Address;
+            NewCity = value.City;
+            NewRentalCost = value.RentalCost;
+            NewDeposit = value.FoodDeposit;
+        }
+    }
 }
 ```
 
 ---
 
-## FILE 88: ContractorsView.xaml
+## FILE 94: ContractorsView.xaml
 
 <a id='contractorsviewxaml'></a>
 
 ```xml
 ﻿<UserControl x:Class="WeddingAgency.Views.Contractors.ContractorsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
 
-    <Grid Margin="24">
-        <TextBlock Text="Подрядчики"
-                   Style="{StaticResource MaterialDesignHeadline4TextBlock}"
-                   VerticalAlignment="Center"
-                   HorizontalAlignment="Center"
-                   Opacity="0.5" />
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                 materialDesign:HintAssist.Hint="Поиск по имени или услуге" Margin="0,0,0,12"/>
+
+        <DataGrid Grid.Row="1" ItemsSource="{Binding Contractors}" SelectedItem="{Binding SelectedContractor, Mode=TwoWay}"
+                  AutoGenerateColumns="False" IsReadOnly="True"
+                  CanUserAddRows="False" CanUserResizeColumns="False" MinHeight="200">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="ФИО" Binding="{Binding FullName}" Width="*"/>
+                <DataGridTextColumn Header="Услуга" Binding="{Binding Service}" Width="200"/>
+                <DataGridTextColumn Header="Стоимость" Binding="{Binding Cost, StringFormat='{}{0:N0} ₽'}" Width="150"/>
+            </DataGrid.Columns>
+        </DataGrid>
     </Grid>
-
 </UserControl>
 ```
 
 ---
 
-## FILE 89: ContractorsView.xaml.cs
+## FILE 95: ContractorsView.xaml.cs
 
 <a id='contractorsviewxamlcs'></a>
 
 ```csharp
 ﻿using System.Windows.Controls;
+using WeddingAgency.ViewModels;
 
 namespace WeddingAgency.Views.Contractors;
 
@@ -5270,13 +5578,18 @@ public partial class ContractorsView : UserControl
     public ContractorsView()
     {
         InitializeComponent();
+        Loaded += async (_, _) =>
+        {
+            if (DataContext is ContractorsViewModel vm)
+                await vm.InitializeAsync();
+        };
     }
 }
 ```
 
 ---
 
-## FILE 90: DashboardView.xaml
+## FILE 96: DashboardView.xaml
 
 <a id='dashboardviewxaml'></a>
 
@@ -5286,25 +5599,89 @@ public partial class ContractorsView : UserControl
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
 
-    <Grid Margin="24">
-        <TextBlock Text="Дашборд"
-                   Style="{StaticResource MaterialDesignHeadline4TextBlock}"
-                   VerticalAlignment="Center"
-                   HorizontalAlignment="Center"
-                   Opacity="0.5" />
-    </Grid>
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <Grid Margin="20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
 
+            <TextBlock Text="Дашборд" Style="{StaticResource MaterialDesignHeadline4TextBlock}" Margin="0,0,0,16"/>
+
+            <!-- Карточки статистики -->
+            <UniformGrid Grid.Row="1" Columns="3" Margin="0,0,0,16">
+                <Border Background="{DynamicResource MaterialDesignPaper}" Padding="16" CornerRadius="6" Margin="0,0,8,8">
+                    <StackPanel>
+                        <TextBlock Text="Активных проектов" Foreground="Gray" FontSize="12"/>
+                        <TextBlock Text="{Binding Data.ActiveProjects}" FontSize="28" FontWeight="Bold" Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                    </StackPanel>
+                </Border>
+                <Border Background="{DynamicResource MaterialDesignPaper}" Padding="16" CornerRadius="6" Margin="0,0,8,8">
+                    <StackPanel>
+                        <TextBlock Text="Клиентов" Foreground="Gray" FontSize="12"/>
+                        <TextBlock Text="{Binding Data.TotalClients}" FontSize="28" FontWeight="Bold" Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                    </StackPanel>
+                </Border>
+                <Border Background="{DynamicResource MaterialDesignPaper}" Padding="16" CornerRadius="6" Margin="0,0,0,8">
+                    <StackPanel>
+                        <TextBlock Text="Гостей" Foreground="Gray" FontSize="12"/>
+                        <TextBlock Text="{Binding Data.TotalGuests}" FontSize="28" FontWeight="Bold" Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <UniformGrid Grid.Row="2" Columns="3" Margin="0,0,0,16">
+                <Border Background="{DynamicResource MaterialDesignPaper}" Padding="16" CornerRadius="6" Margin="0,0,8,8">
+                    <StackPanel>
+                        <TextBlock Text="Подрядчиков" Foreground="Gray" FontSize="12"/>
+                        <TextBlock Text="{Binding Data.TotalContractors}" FontSize="28" FontWeight="Bold" Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                    </StackPanel>
+                </Border>
+                <Border Background="{DynamicResource MaterialDesignPaper}" Padding="16" CornerRadius="6" Margin="0,0,8,8">
+                    <StackPanel>
+                        <TextBlock Text="Общий бюджет" Foreground="Gray" FontSize="12"/>
+                        <TextBlock Text="{Binding Data.TotalBudget, StringFormat='{}{0:N0} ₽'}" FontSize="20" FontWeight="Bold" Foreground="Green"/>
+                    </StackPanel>
+                </Border>
+                <Border Background="{DynamicResource MaterialDesignPaper}" Padding="16" CornerRadius="6" Margin="0,0,0,8">
+                    <StackPanel>
+                        <TextBlock Text="Оплачено" Foreground="Gray" FontSize="12"/>
+                        <TextBlock Text="{Binding Data.TotalPaid, StringFormat='{}{0:N0} ₽'}" FontSize="20" FontWeight="Bold" Foreground="DarkGreen"/>
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <!-- Ближайшие свадьбы -->
+            <TextBlock Grid.Row="3" Text="Ближайшие свадьбы" Style="{StaticResource MaterialDesignHeadline6TextBlock}" Margin="0,0,0,8"/>
+
+            <DataGrid Grid.Row="4" ItemsSource="{Binding UpcomingWeddings}" AutoGenerateColumns="False" IsReadOnly="True"
+                      CanUserAddRows="False" CanUserResizeColumns="False" MinHeight="150">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Проект" Binding="{Binding ProjectNumber}" Width="120"/>
+                    <DataGridTextColumn Header="Дата" Binding="{Binding WeddingDate, StringFormat='{}{0:dd.MM.yyyy}'}" Width="100"/>
+                    <DataGridTextColumn Header="Дней" Binding="{Binding DaysLeft}" Width="60"/>
+                    <DataGridTextColumn Header="Клиенты" Binding="{Binding ClientNames}" Width="*"/>
+                    <DataGridTextColumn Header="Город" Binding="{Binding City}" Width="120"/>
+                    <DataGridTextColumn Header="Гостей" Binding="{Binding GuestCount}" Width="80"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+    </ScrollViewer>
 </UserControl>
 ```
 
 ---
 
-## FILE 91: DashboardView.xaml.cs
+## FILE 97: DashboardView.xaml.cs
 
 <a id='dashboardviewxamlcs'></a>
 
 ```csharp
 ﻿using System.Windows.Controls;
+using WeddingAgency.ViewModels;
 
 namespace WeddingAgency.Views.Dashboard;
 
@@ -5313,40 +5690,69 @@ public partial class DashboardView : UserControl
     public DashboardView()
     {
         InitializeComponent();
+        Loaded += async (_, _) =>
+        {
+            if (DataContext is DashboardViewModel vm)
+                await vm.InitializeAsync();
+        };
     }
 }
 ```
 
 ---
 
-## FILE 92: FinanceView.xaml
+## FILE 98: FinanceView.xaml
 
 <a id='financeviewxaml'></a>
 
 ```xml
 ﻿<UserControl x:Class="WeddingAgency.Views.Finance.FinanceView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
 
-    <Grid Margin="24">
-        <TextBlock Text="Финансы"
-                   Style="{StaticResource MaterialDesignHeadline4TextBlock}"
-                   VerticalAlignment="Center"
-                   HorizontalAlignment="Center"
-                   Opacity="0.5" />
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Сводка -->
+        <Border Background="{DynamicResource MaterialDesignPaper}" Padding="16" CornerRadius="6" Margin="0,0,0,16">
+            <WrapPanel>
+                <TextBlock Text="{Binding Summary.BudgetTotal, StringFormat='Бюджет: {0:N0} ₽'}" Margin="0,0,24,0" FontWeight="Bold" FontSize="14"/>
+                <TextBlock Text="{Binding Summary.PaidByClient, StringFormat='Оплачено клиентами: {0:N0} ₽'}" Margin="0,0,24,0" FontSize="14"/>
+                <TextBlock Text="{Binding Summary.TotalActual, StringFormat='Расходы: {0:N0} ₽'}" Margin="0,0,24,0" FontSize="14"/>
+                <TextBlock Text="{Binding Summary.Remainder, StringFormat='Остаток: {0:N0} ₽'}" Margin="0,0,24,0" Foreground="Green" FontSize="14"/>
+                <TextBlock Text="{Binding Summary.Profit, StringFormat='Прибыль: {0:N0} ₽'}" FontWeight="Bold" Foreground="DarkGreen" FontSize="14"/>
+            </WrapPanel>
+        </Border>
+
+        <!-- Таблица операций -->
+        <DataGrid Grid.Row="1" ItemsSource="{Binding Transactions}" AutoGenerateColumns="False" IsReadOnly="True"
+                  CanUserAddRows="False" CanUserResizeColumns="False" MinHeight="200">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Тип" Binding="{Binding Type}" Width="140"/>
+                <DataGridTextColumn Header="Номер" Binding="{Binding Number}" Width="120"/>
+                <DataGridTextColumn Header="Контрагент" Binding="{Binding Counterparty}" Width="*"/>
+                <DataGridTextColumn Header="Сумма" Binding="{Binding Amount, StringFormat='{}{0:N0} ₽'}" Width="120"/>
+                <DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="100"/>
+                <DataGridTextColumn Header="Дата" Binding="{Binding Date, StringFormat='{}{0:dd.MM.yyyy}'}" Width="100"/>
+            </DataGrid.Columns>
+        </DataGrid>
     </Grid>
-
 </UserControl>
 ```
 
 ---
 
-## FILE 93: FinanceView.xaml.cs
+## FILE 99: FinanceView.xaml.cs
 
 <a id='financeviewxamlcs'></a>
 
 ```csharp
 ﻿using System.Windows.Controls;
+using WeddingAgency.ViewModels;
 
 namespace WeddingAgency.Views.Finance;
 
@@ -5355,13 +5761,18 @@ public partial class FinanceView : UserControl
     public FinanceView()
     {
         InitializeComponent();
+        Loaded += async (_, _) =>
+        {
+            if (DataContext is FinanceViewModel vm)
+                await vm.InitializeAsync();
+        };
     }
 }
 ```
 
 ---
 
-## FILE 94: PeopleView.xaml
+## FILE 100: PeopleView.xaml
 
 <a id='peopleviewxaml'></a>
 
@@ -5467,7 +5878,7 @@ public partial class FinanceView : UserControl
 
 ---
 
-## FILE 95: PeopleView.xaml.cs
+## FILE 101: PeopleView.xaml.cs
 
 <a id='peopleviewxamlcs'></a>
 
@@ -5493,7 +5904,7 @@ public partial class PeopleView : UserControl
 
 ---
 
-## FILE 96: ProjectDetailsView.xaml
+## FILE 102: ProjectDetailsView.xaml
 
 <a id='projectdetailsviewxaml'></a>
 
@@ -5690,30 +6101,10 @@ public partial class PeopleView : UserControl
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                        <TextBox Text="{Binding VenueSearchText, UpdateSourceTrigger=PropertyChanged}" materialDesign:HintAssist.Hint="Поиск площадки" Width="200" Margin="0,0,8,0" KeyDown="OnVenueSearchKeyDown"/>
-                        <TextBox Text="{Binding NewVenueRentalCost, UpdateSourceTrigger=PropertyChanged}" materialDesign:HintAssist.Hint="Аренда" Width="100" Margin="0,0,6,0"/>
-                        <TextBox Text="{Binding NewVenueDeposit, UpdateSourceTrigger=PropertyChanged}" materialDesign:HintAssist.Hint="Депозит" Width="100" Margin="0,0,6,0"/>
-                        <DatePicker SelectedDate="{Binding NewVenueEventDate}" Width="120" Margin="0,0,6,0"/>
-                        <Button Content="Найти" Command="{Binding SearchVenuesCommand}" Style="{StaticResource MaterialDesignFlatButton}"/>
-                    </StackPanel>
-                    <ListBox Grid.Row="0" ItemsSource="{Binding VenueSearchResults}"
-                             Visibility="{Binding VenueSearchResults.Count, Converter={StaticResource BoolToVisibilityConverter}}" MaxHeight="120" Margin="0,0,0,8">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <Grid>
-                                    <StackPanel>
-                                        <TextBlock Text="{Binding Name}" FontWeight="Bold"/>
-                                        <TextBlock Text="{Binding City}"/>
-                                    </StackPanel>
-                                    <Button Content="Добавить" HorizontalAlignment="Right"
-                                            Command="{Binding DataContext.AddVenueCommand, RelativeSource={RelativeSource AncestorType=ListBox}}" CommandParameter="{Binding}"/>
-                                </Grid>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
+                    <Button Content="Добавить" Command="{Binding AddVenueCommand}" Style="{StaticResource MaterialDesignRaisedButton}"
+                HorizontalAlignment="Left" Margin="0,0,0,8"/>
                     <DataGrid Grid.Row="1" ItemsSource="{Binding Venues}" AutoGenerateColumns="False" IsReadOnly="True"
-                              CanUserAddRows="False" CanUserResizeColumns="False" MinHeight="200">
+                  CanUserAddRows="False" CanUserResizeColumns="False" MinHeight="200">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Название" Binding="{Binding VenueName}" Width="*"/>
                             <DataGridTextColumn Header="Адрес" Binding="{Binding Address}" Width="*"/>
@@ -5722,6 +6113,14 @@ public partial class PeopleView : UserControl
                             <DataGridTextColumn Header="Депозит" Binding="{Binding DepositAmount, StringFormat='{}{0:N0} ₽'}" Width="110"/>
                             <DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="100"/>
                             <DataGridTextColumn Header="Дата" Binding="{Binding EventDate, StringFormat='{}{0:dd.MM.yyyy}'}" Width="100"/>
+                            <DataGridTemplateColumn Header="" Width="50">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Content="✕" Width="30" Height="24"
+                                    Command="{Binding DataContext.RemoveVenueCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
@@ -5799,7 +6198,7 @@ public partial class PeopleView : UserControl
 
 ---
 
-## FILE 97: ProjectDetailsView.xaml.cs
+## FILE 103: ProjectDetailsView.xaml.cs
 
 <a id='projectdetailsviewxamlcs'></a>
 
@@ -5857,17 +6256,17 @@ public partial class ProjectDetailsView : UserControl
             vm.LoadTimelineCommand.Execute(null);
     }
 
-    private void OnVenueSearchKeyDown(object sender, KeyEventArgs e)
-    {
-        if (e.Key == Key.Enter && DataContext is ProjectDetailsViewModel vm)
-            vm.SearchVenuesCommand.Execute(null);
-    }
+    //private void OnVenueSearchKeyDown(object sender, KeyEventArgs e)
+    //{
+    //    if (e.Key == Key.Enter && DataContext is ProjectDetailsViewModel vm)
+    //        vm.SearchVenuesCommand.Execute(null);
+    //}
 }
 ```
 
 ---
 
-## FILE 98: ProjectsView.xaml
+## FILE 104: ProjectsView.xaml
 
 <a id='projectsviewxaml'></a>
 
@@ -5992,7 +6391,7 @@ public partial class ProjectDetailsView : UserControl
 
 ---
 
-## FILE 99: ProjectsView.xaml.cs
+## FILE 105: ProjectsView.xaml.cs
 
 <a id='projectsviewxamlcs'></a>
 
@@ -6028,34 +6427,71 @@ public partial class ProjectsView : UserControl
 
 ---
 
-## FILE 100: VenuesView.xaml
+## FILE 106: VenuesView.xaml
 
 <a id='venuesviewxaml'></a>
 
 ```xml
 ﻿<UserControl x:Class="WeddingAgency.Views.Venues.VenuesView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
 
-    <Grid Margin="24">
-        <TextBlock Text="Площадки"
-                   Style="{StaticResource MaterialDesignHeadline4TextBlock}"
-                   VerticalAlignment="Center"
-                   HorizontalAlignment="Center"
-                   Opacity="0.5" />
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Панель добавления -->
+        <Border Background="{DynamicResource MaterialDesignPaper}" Padding="16" CornerRadius="6" Margin="0,0,0,16">
+            <StackPanel>
+                <TextBlock Text="Добавить / Редактировать площадку" Style="{StaticResource MaterialDesignSubtitle1TextBlock}" Margin="0,0,0,8"/>
+                <WrapPanel>
+                    <TextBox Text="{Binding NewName, UpdateSourceTrigger=PropertyChanged}" materialDesign:HintAssist.Hint="Название" Width="180" Margin="0,0,8,8"/>
+                    <TextBox Text="{Binding NewCity, UpdateSourceTrigger=PropertyChanged}" materialDesign:HintAssist.Hint="Город" Width="120" Margin="0,0,8,8"/>
+                    <TextBox Text="{Binding NewAddress, UpdateSourceTrigger=PropertyChanged}" materialDesign:HintAssist.Hint="Адрес" Width="200" Margin="0,0,8,8"/>
+                    <TextBox Text="{Binding NewRentalCost, UpdateSourceTrigger=PropertyChanged}" materialDesign:HintAssist.Hint="Аренда" Width="100" Margin="0,0,8,8"/>
+                    <TextBox Text="{Binding NewDeposit, UpdateSourceTrigger=PropertyChanged}" materialDesign:HintAssist.Hint="Депозит" Width="100" Margin="0,0,8,8"/>
+                    <Button Content="Добавить" Command="{Binding AddVenueCommand}" Style="{StaticResource MaterialDesignRaisedButton}" Margin="0,0,8,8"/>
+                    <Button Content="Сохранить" Command="{Binding UpdateVenueCommand}" Style="{StaticResource MaterialDesignFlatButton}" Margin="0,0,8,8"
+                            IsEnabled="{Binding SelectedVenue, Converter={StaticResource IsNotNullConverter}}"/>
+                    <Button Content="Удалить" Command="{Binding DeleteVenueCommand}" Style="{StaticResource MaterialDesignFlatButton}" Margin="0,0,8,8"
+                            IsEnabled="{Binding SelectedVenue, Converter={StaticResource IsNotNullConverter}}"/>
+                </WrapPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- Поиск -->
+        <TextBox Grid.Row="1" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                 materialDesign:HintAssist.Hint="Поиск по названию, городу или адресу" Margin="0,0,0,8"/>
+
+        <!-- Таблица -->
+        <DataGrid Grid.Row="2" ItemsSource="{Binding Venues}" SelectedItem="{Binding SelectedVenue, Mode=TwoWay}"
+                  AutoGenerateColumns="False" IsReadOnly="True"
+                  CanUserAddRows="False" CanUserResizeColumns="False" MinHeight="200">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Название" Binding="{Binding Name}" Width="*"/>
+                <DataGridTextColumn Header="Город" Binding="{Binding City}" Width="120"/>
+                <DataGridTextColumn Header="Адрес" Binding="{Binding Address}" Width="*"/>
+                <DataGridTextColumn Header="Аренда" Binding="{Binding RentalCost, StringFormat='{}{0:N0} ₽'}" Width="120"/>
+                <DataGridTextColumn Header="Депозит" Binding="{Binding FoodDeposit, StringFormat='{}{0:N0} ₽'}" Width="120"/>
+            </DataGrid.Columns>
+        </DataGrid>
     </Grid>
-
 </UserControl>
 ```
 
 ---
 
-## FILE 101: VenuesView.xaml.cs
+## FILE 107: VenuesView.xaml.cs
 
 <a id='venuesviewxamlcs'></a>
 
 ```csharp
 ﻿using System.Windows.Controls;
+using WeddingAgency.ViewModels;
 
 namespace WeddingAgency.Views.Venues;
 
@@ -6064,13 +6500,18 @@ public partial class VenuesView : UserControl
     public VenuesView()
     {
         InitializeComponent();
+        Loaded += async (_, _) =>
+        {
+            if (DataContext is VenuesViewModel vm)
+                await vm.InitializeAsync();
+        };
     }
 }
 ```
 
 ---
 
-## FILE 102: AddContractorWindow.xaml
+## FILE 108: AddContractorWindow.xaml
 
 <a id='addcontractorwindowxaml'></a>
 
@@ -6130,7 +6571,7 @@ public partial class VenuesView : UserControl
 
 ---
 
-## FILE 103: AddContractorWindow.xaml.cs
+## FILE 109: AddContractorWindow.xaml.cs
 
 <a id='addcontractorwindowxamlcs'></a>
 
@@ -6182,7 +6623,7 @@ public partial class AddContractorWindow : Window
 
 ---
 
-## FILE 104: AddGuestWindow.xaml
+## FILE 110: AddGuestWindow.xaml
 
 <a id='addguestwindowxaml'></a>
 
@@ -6257,7 +6698,7 @@ public partial class AddContractorWindow : Window
 
 ---
 
-## FILE 105: AddGuestWindow.xaml.cs
+## FILE 111: AddGuestWindow.xaml.cs
 
 <a id='addguestwindowxamlcs'></a>
 
@@ -6315,7 +6756,7 @@ public partial class AddGuestWindow : Window
 
 ---
 
-## FILE 106: AdminWindow.xaml
+## FILE 112: AdminWindow.xaml
 
 <a id='adminwindowxaml'></a>
 
@@ -6327,7 +6768,7 @@ public partial class AddGuestWindow : Window
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         Title="Панель администратора"
         Height="600"
-        Width="900"
+        Width="950"
         WindowStartupLocation="CenterScreen"
         Background="{DynamicResource MaterialDesignBackground}">
 
@@ -6347,7 +6788,6 @@ public partial class AddGuestWindow : Window
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!-- Заголовок -->
         <TextBlock Text="{Binding Title}"
                    Style="{StaticResource MaterialDesignHeadline5TextBlock}"
                    Margin="0,0,0,16" />
@@ -6366,6 +6806,7 @@ public partial class AddGuestWindow : Window
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
@@ -6377,12 +6818,16 @@ public partial class AddGuestWindow : Window
                              materialDesign:HintAssist.Hint="ФИО"
                              Text="{Binding NewFullName, UpdateSourceTrigger=PropertyChanged}"
                              Margin="0,0,8,0" />
-                    <CheckBox Grid.Column="2"
+                    <TextBox Grid.Column="2"
+                             materialDesign:HintAssist.Hint="Телефон"
+                             Text="{Binding NewPersonPhone, UpdateSourceTrigger=PropertyChanged}"
+                             Margin="0,0,8,0" />
+                    <CheckBox Grid.Column="3"
                               Content="Админ"
                               IsChecked="{Binding NewIsAdmin}"
                               VerticalAlignment="Center"
                               Margin="0,0,8,0" />
-                    <Button Grid.Column="3"
+                    <Button Grid.Column="4"
                             Content="Создать"
                             Command="{Binding CreateUserCommand}"
                             Style="{StaticResource MaterialDesignRaisedButton}" />
@@ -6397,9 +6842,7 @@ public partial class AddGuestWindow : Window
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <!-- Поиск и фильтр -->
-            <StackPanel Orientation="Horizontal"
-                        Margin="0,0,0,8">
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                 <TextBox materialDesign:HintAssist.Hint="Поиск по логину или ФИО"
                          Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                          Width="250"
@@ -6409,7 +6852,6 @@ public partial class AddGuestWindow : Window
                           Width="150" />
             </StackPanel>
 
-            <!-- DataGrid -->
             <DataGrid Grid.Row="1"
                       ItemsSource="{Binding Users}"
                       SelectedItem="{Binding SelectedUser}"
@@ -6427,7 +6869,6 @@ public partial class AddGuestWindow : Window
                 </DataGrid.Columns>
             </DataGrid>
 
-            <!-- Кнопки действий -->
             <StackPanel Grid.Row="1"
                         Orientation="Horizontal"
                         VerticalAlignment="Bottom"
@@ -6449,7 +6890,7 @@ public partial class AddGuestWindow : Window
 
 ---
 
-## FILE 107: AdminWindow.xaml.cs
+## FILE 113: AdminWindow.xaml.cs
 
 <a id='adminwindowxamlcs'></a>
 
@@ -6482,7 +6923,7 @@ public partial class AdminWindow : Window
 
 ---
 
-## FILE 108: ChangePasswordWindow.xaml
+## FILE 114: ChangePasswordWindow.xaml
 
 <a id='changepasswordwindowxaml'></a>
 
@@ -6536,7 +6977,7 @@ public partial class AdminWindow : Window
 
 ---
 
-## FILE 109: ChangePasswordWindow.xaml.cs
+## FILE 115: ChangePasswordWindow.xaml.cs
 
 <a id='changepasswordwindowxamlcs'></a>
 
@@ -6595,7 +7036,7 @@ public partial class ChangePasswordWindow : Window
 
 ---
 
-## FILE 110: CreateProjectWindow.xaml
+## FILE 116: CreateProjectWindow.xaml
 
 <a id='createprojectwindowxaml'></a>
 
@@ -6673,7 +7114,7 @@ public partial class ChangePasswordWindow : Window
 
 ---
 
-## FILE 111: CreateProjectWindow.xaml.cs
+## FILE 117: CreateProjectWindow.xaml.cs
 
 <a id='createprojectwindowxamlcs'></a>
 
@@ -6710,7 +7151,7 @@ public partial class CreateProjectWindow : Window
 
 ---
 
-## FILE 112: LoginWindow.xaml
+## FILE 118: LoginWindow.xaml
 
 <a id='loginwindowxaml'></a>
 
@@ -6772,7 +7213,7 @@ public partial class CreateProjectWindow : Window
 
 ---
 
-## FILE 113: LoginWindow.xaml.cs
+## FILE 119: LoginWindow.xaml.cs
 
 <a id='loginwindowxamlcs'></a>
 
@@ -6843,7 +7284,7 @@ public partial class LoginWindow : Window
 
 ---
 
-## FILE 114: MainWindow.xaml
+## FILE 120: MainWindow.xaml
 
 <a id='mainwindowxaml'></a>
 
@@ -7042,7 +7483,7 @@ public partial class LoginWindow : Window
 
 ---
 
-## FILE 115: MainWindow.xaml.cs
+## FILE 121: MainWindow.xaml.cs
 
 <a id='mainwindowxamlcs'></a>
 
@@ -7064,7 +7505,7 @@ public partial class MainWindow : Window
 
 ---
 
-## FILE 116: SelectPersonWindow.xaml
+## FILE 122: SelectPersonWindow.xaml
 
 <a id='selectpersonwindowxaml'></a>
 
@@ -7118,7 +7559,7 @@ public partial class MainWindow : Window
 
 ---
 
-## FILE 117: SelectPersonWindow.xaml.cs
+## FILE 123: SelectPersonWindow.xaml.cs
 
 <a id='selectpersonwindowxamlcs'></a>
 
@@ -7163,7 +7604,133 @@ public partial class SelectPersonWindow : Window
 
 ---
 
-## FILE 118: WeddingAgency.csproj
+## FILE 124: SelectVenueWindow.xaml
+
+<a id='selectvenuewindowxaml'></a>
+
+```xml
+﻿<Window x:Class="WeddingAgency.Views.Windows.SelectVenueWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        Height="420" Width="500"
+        WindowStartupLocation="CenterScreen" ResizeMode="NoResize"
+        Background="{DynamicResource MaterialDesignBackground}">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+            <TextBox x:Name="SearchBox" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                     materialDesign:HintAssist.Hint="Поиск по названию или городу"
+                     Width="300" Margin="0,0,8,0" KeyDown="SearchBox_KeyDown"/>
+            <Button Content="Найти" Click="Search_Click" Style="{StaticResource MaterialDesignFlatButton}"/>
+        </StackPanel>
+
+        <ListBox Grid.Row="1" x:Name="VenueList" ItemsSource="{Binding SearchResults}" MaxHeight="250" Margin="0,0,0,8"
+                 MouseDoubleClick="VenueList_MouseDoubleClick">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Margin="4">
+                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
+                        <TextBlock Text="{Binding City}" Foreground="Gray" FontSize="12"/>
+                        <TextBlock Text="{Binding RentalCost, StringFormat='Аренда: {0:N0} ₽'}" Foreground="Gray" FontSize="11"/>
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+            <Button Content="Отмена" Click="Cancel_Click" Style="{StaticResource MaterialDesignFlatButton}" Margin="0,0,8,0"/>
+            <Button Content="Выбрать" Click="Select_Click" Style="{StaticResource MaterialDesignRaisedButton}"/>
+        </StackPanel>
+    </Grid>
+</Window>
+```
+
+---
+
+## FILE 125: SelectVenueWindow.xaml.cs
+
+<a id='selectvenuewindowxamlcs'></a>
+
+```csharp
+﻿using System.Windows;
+using System.Windows.Input;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using WeddingAgency.Models;
+
+namespace WeddingAgency.Views.Windows;
+
+public partial class SelectVenueWindow : Window
+{
+    private readonly IServiceProvider _serviceProvider;
+
+    public VenuesCatalog? SelectedVenue { get; private set; }
+
+    public SelectVenueWindow(IServiceProvider serviceProvider)
+    {
+        InitializeComponent();
+        _serviceProvider = serviceProvider;
+        DataContext = this;
+    }
+
+    public List<VenuesCatalog> SearchResults { get; set; } = new();
+    public string SearchText { get; set; } = string.Empty;
+
+    private async void Search_Click(object sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(SearchText)) return;
+
+        using var scope = _serviceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<WeddingAgencyContext>();
+        var search = SearchText.ToLower().Trim();
+        SearchResults = await context.VenuesCatalogs
+            .Where(v => v.Name.ToLower().Contains(search) || v.City.ToLower().Contains(search))
+            .Take(15)
+            .ToListAsync();
+        VenueList.ItemsSource = SearchResults;
+    }
+
+    private void Select_Click(object sender, RoutedEventArgs e)
+    {
+        SelectedVenue = VenueList.SelectedItem as VenuesCatalog;
+        DialogResult = SelectedVenue != null;
+        Close();
+    }
+
+    private void Cancel_Click(object sender, RoutedEventArgs e)
+    {
+        DialogResult = false;
+        Close();
+    }
+
+    private void VenueList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        if (VenueList.SelectedItem is VenuesCatalog venue)
+        {
+            SelectedVenue = venue;
+            DialogResult = true;
+            Close();
+        }
+    }
+
+    private void SearchBox_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+            Search_Click(sender, e);
+    }
+}
+```
+
+---
+
+## FILE 126: WeddingAgency.csproj
 
 <a id='weddingagencycsproj'></a>
 
@@ -7200,19 +7767,6 @@ public partial class SelectPersonWindow : Window
 		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<Folder Include="Core\Enums\" />
-		<Folder Include="Core\Interfaces\" />
-		<Folder Include="Core\DTOs\" />
-		<Folder Include="Core\Services\" />
-		<Folder Include="Data\Context\" />
-		<Folder Include="Data\Repositories\" />
-		<Folder Include="Data\Configurations\" />
-		<Folder Include="Seed\" />
-		<Folder Include="Views\Controls\" />
-		<Folder Include="Views\Dialogs\" />
 	</ItemGroup>
 
 	<ItemGroup>
