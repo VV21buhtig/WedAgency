@@ -33,6 +33,9 @@ public partial class AdminUsersViewModel : BaseViewModel
     private string _newFullName = string.Empty;
 
     [ObservableProperty]
+    private string _newPersonPhone = string.Empty;
+
+    [ObservableProperty]
     private bool _newIsAdmin;
 
     public string ToggleButtonText => SelectedUser?.IsActive == true ? "Заблокировать" : "Разблокировать";
@@ -80,7 +83,6 @@ public partial class AdminUsersViewModel : BaseViewModel
 
             Users = new ObservableCollection<User>(filtered);
 
-            // После перезагрузки списка пытаемся сохранить выделение
             if (SelectedUser != null)
             {
                 var stillExists = Users.FirstOrDefault(u => u.Id == SelectedUser.Id);
@@ -104,9 +106,10 @@ public partial class AdminUsersViewModel : BaseViewModel
 
         try
         {
-            await _userService.CreateUserAsync(NewLogin.Trim(), NewFullName.Trim(), NewIsAdmin);
+            await _userService.CreateUserAsync(NewLogin.Trim(), NewFullName.Trim(), NewPersonPhone.Trim(), NewIsAdmin);
             NewLogin = string.Empty;
             NewFullName = string.Empty;
+            NewPersonPhone = string.Empty;
             NewIsAdmin = false;
             InfoMessage?.Invoke(this, "Пользователь создан");
             await LoadUsers();
@@ -147,16 +150,13 @@ public partial class AdminUsersViewModel : BaseViewModel
         var newStatus = !SelectedUser.IsActive;
         await _userService.SetActiveStatusAsync(SelectedUser.Id, newStatus);
 
-        // Обновляем текущий объект вручную
         SelectedUser.IsActive = newStatus;
 
-        // Принудительно уведомляем UI
         OnPropertyChanged(nameof(SelectedUser));
         OnPropertyChanged(nameof(ToggleButtonText));
 
         InfoMessage?.Invoke(this, newStatus ? "Пользователь разблокирован" : "Пользователь заблокирован");
 
-        // Перезагружаем список для актуальности
         await LoadUsers();
     }
 

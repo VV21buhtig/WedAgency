@@ -5,7 +5,7 @@
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         Title="Панель администратора"
         Height="600"
-        Width="900"
+        Width="950"
         WindowStartupLocation="CenterScreen"
         Background="{DynamicResource MaterialDesignBackground}">
 
@@ -25,7 +25,6 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!-- Заголовок -->
         <TextBlock Text="{Binding Title}"
                    Style="{StaticResource MaterialDesignHeadline5TextBlock}"
                    Margin="0,0,0,16" />
@@ -44,6 +43,7 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
@@ -55,12 +55,16 @@
                              materialDesign:HintAssist.Hint="ФИО"
                              Text="{Binding NewFullName, UpdateSourceTrigger=PropertyChanged}"
                              Margin="0,0,8,0" />
-                    <CheckBox Grid.Column="2"
+                    <TextBox Grid.Column="2"
+                             materialDesign:HintAssist.Hint="Телефон"
+                             Text="{Binding NewPersonPhone, UpdateSourceTrigger=PropertyChanged}"
+                             Margin="0,0,8,0" />
+                    <CheckBox Grid.Column="3"
                               Content="Админ"
                               IsChecked="{Binding NewIsAdmin}"
                               VerticalAlignment="Center"
                               Margin="0,0,8,0" />
-                    <Button Grid.Column="3"
+                    <Button Grid.Column="4"
                             Content="Создать"
                             Command="{Binding CreateUserCommand}"
                             Style="{StaticResource MaterialDesignRaisedButton}" />
@@ -75,9 +79,7 @@
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <!-- Поиск и фильтр -->
-            <StackPanel Orientation="Horizontal"
-                        Margin="0,0,0,8">
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                 <TextBox materialDesign:HintAssist.Hint="Поиск по логину или ФИО"
                          Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                          Width="250"
@@ -87,7 +89,6 @@
                           Width="150" />
             </StackPanel>
 
-            <!-- DataGrid -->
             <DataGrid Grid.Row="1"
                       ItemsSource="{Binding Users}"
                       SelectedItem="{Binding SelectedUser}"
@@ -105,7 +106,6 @@
                 </DataGrid.Columns>
             </DataGrid>
 
-            <!-- Кнопки действий -->
             <StackPanel Grid.Row="1"
                         Orientation="Horizontal"
                         VerticalAlignment="Bottom"

@@ -19,15 +19,19 @@ public class UserManagementService : IUserManagementService
             .ToListAsync();
     }
 
-    public async Task CreateUserAsync(string login, string fullName, bool isAdmin = false)
+    public async Task CreateUserAsync(string login, string fullName, string? phone, bool isAdmin = false)
     {
         if (await _context.Users.AnyAsync(u => u.Login == login))
             throw new InvalidOperationException("Пользователь с таким логином уже существует.");
 
+        var phonePrimary = !string.IsNullOrWhiteSpace(phone)
+            ? phone
+            : Guid.NewGuid().ToString();
+
         var person = new Person
         {
             FullName = fullName,
-            PhonePrimary = "-",
+            PhonePrimary = phonePrimary,
             CreatedAt = DateTime.Now,
             UpdatedAt = DateTime.Now
         };
@@ -53,7 +57,7 @@ public class UserManagementService : IUserManagementService
         var user = await _context.Users.FindAsync(userId);
         if (user is null) return;
 
-        user.PasswordHash = "1"; 
+        user.PasswordHash = "1";
         user.MustChangePassword = true;
         await _context.SaveChangesAsync();
     }
